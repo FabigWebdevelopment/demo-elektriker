@@ -2,32 +2,36 @@
 
 > **Mission:** Elevate German local businesses to enterprise-level web presence, SEO, and automation
 >
-> **Strategy:** Premium landing pages + Twenty CRM + WhatsApp AI + Local SEO domination
+> **Strategy:** Apple-style pricing with psychological anchors + WhatsApp progression (Manual → Templates → AI)
 
 ---
 
-## 🎯 Business Model
+## 🎯 Business Model & Pricing
 
 **Target Market:** German local businesses (Handwerk, Gastronomie, Wellness, Healthcare, Services)
 
-**Pricing:** €299-2000+/month per client
-**Goal:** 20-30 clients in Year 1 = €6k-15k MRR
+**Pricing Tiers:**
+- **Starter:** €299/mo (Manual WhatsApp, Basic Email)
+- **Professional:** €449/mo ⭐ (Templates, Follow-Ups) ← 60% of clients
+- **Premium:** €749/mo (WhatsApp AI, Custom Funnels)
+- **Enterprise:** €1,499/mo (Multi-location, Google Ads)
 
-**What EVERY Client Gets (Full Package):**
-1. ✅ **Enterprise-grade landing page** (shadcn + premium components)
-2. ✅ **Twenty CRM** (Kanban board, lead management)
-3. ✅ **WhatsApp AI automation** (24/7 customer service) - **INCLUDED IN ALL TIERS**
-4. ✅ **Email automation** (react-email templates)
-5. ✅ **SMS notifications** (Twilio)
-6. ✅ **Local SEO optimization** (Google My Business, directories, schema markup)
+**Goal:** 30 clients in Year 1 = €16,830 MRR
+**ARPC:** €561/mo (with Apple strategy)
 
-**USP:** WhatsApp AI is NOT an add-on - it's standard. Every client gets 24/7 AI customer service from day one.
+**📄 Full Pricing Strategy:** See `PRICING_STRATEGY.md`
 
 **What Thomas Does:**
 - Builds websites FOR clients (agency model, not self-service)
 - Manages content updates via config files (no CMS needed)
 - Handles automation setup (n8n workflows)
 - Optimizes for local search rankings
+
+**Key Differentiators:**
+1. **Apple Anchoring:** Add-ons make higher tiers look like no-brainers
+2. **WhatsApp Progression:** Manual → Templates (Pro) → AI (Premium)
+3. **Email Progression:** Basic → Follow-Ups (Pro) → Funnels (Premium)
+4. **Analytics-Driven Upsells:** n8n automatically triggers upgrade emails
 
 ---
 
@@ -1129,9 +1133,143 @@ Every page MUST have:
    - `/api/send-email` endpoint
    - n8n workflow templates
 
-8. **Phase 8: WhatsApp AI (Premium tier)**
-   - Twilio integration
-   - GPT-4 conversation handling
+8. **Phase 8: WhatsApp Integration (Tier-Based)**
+   - **Starter:** Manual inbox (Twenty CRM integration)
+   - **Professional:** Template system (quick replies, FAQ automation)
+   - **Premium:** AI (Twilio + GPT-4o conversation handling)
+   - **Enterprise:** Multi-location AI with analytics
+
+9. **Phase 9: Email Automation (Tier-Based)**
+   - **Starter:** Basic templates (welcome, thank you)
+   - **Professional:** Follow-up sequences (6 pre-built)
+   - **Premium:** Custom funnel builder (n8n visual editor)
+   - **Enterprise:** Multi-location funnels with API access
+
+10. **Phase 10: Analytics & Upsell Automation**
+    - Pirsch Analytics integration
+    - PostHog for session replays
+    - Attribution tracking (UTM, referrers)
+    - n8n upsell triggers (based on usage patterns)
+
+---
+
+## 🎯 Implementation Priority (By Package)
+
+### FIRST: Starter Package (€299/mo)
+**Goal:** Get first paying client ASAP
+
+**Build Order:**
+1. ✅ Clean Next.js setup (DONE)
+2. shadcn/ui + Tailwind CSS
+3. Config system (`business.ts`, `theme.ts`, `seo.ts`)
+4. 5-page landing page template (Hero, Services, About, Contact, Impressum)
+5. Contact form → Twenty CRM integration
+6. Manual WhatsApp inbox (Twenty CRM shows WhatsApp messages)
+7. Basic email templates (welcome, thank you) via Resend
+8. Local SEO (5 directories, schema.org markup)
+9. Analytics (Pirsch) + Attribution tracking
+
+**Time Estimate:** 2-3 weeks
+**First Client:** Validate everything works end-to-end
+
+---
+
+### SECOND: Professional Package (€449/mo)
+**Goal:** Build upsell features for Starter clients
+
+**Add on top of Starter:**
+1. WhatsApp Template System
+   - Pre-built templates (pricing, hours, services)
+   - One-click quick replies in CRM
+   - FAQ automation (auto-send PDFs, price lists)
+2. Email Follow-Up Sequences (6 pre-built)
+   - Welcome sequence (day 1, 3, 7)
+   - Abandoned lead re-engagement
+   - Post-service review request
+   - Seasonal promotions
+3. 10-page site support (vs 5)
+4. Twilio SMS integration (200/mo)
+
+**Time Estimate:** 2 weeks
+**Trigger:** When Starter client replies to 20+ WhatsApp/day
+
+---
+
+### THIRD: Premium Package (€749/mo)
+**Goal:** Build AI automation for Professional clients
+
+**Add on top of Professional:**
+1. WhatsApp AI (GPT-4o)
+   - Conversation handler (24/7 autonomous)
+   - Smart appointment booking (calendar integration)
+   - Quote generation
+   - Multi-language support
+   - Sentiment analysis
+   - Voice transcription
+2. Custom Funnel Builder (n8n)
+   - Visual drag-drop interface
+   - Industry-specific templates
+   - Upsell/cross-sell automation
+   - A/B testing
+3. Unlimited pages, unlimited updates
+
+**Time Estimate:** 3-4 weeks
+**Trigger:** When Professional client uses 30+ templates/day
+
+---
+
+### FOURTH: Enterprise Package (€1,499/mo)
+**Goal:** Scale to multi-location clients
+
+**Add on top of Premium:**
+1. Multi-location WhatsApp AI
+   - Separate numbers per location
+   - Unified dashboard
+   - Location-specific AI training
+2. Google Ads management
+3. Advanced analytics
+4. Dedicated account manager workflows
+
+**Time Estimate:** 2-3 weeks
+**Trigger:** When Premium client opens 2nd location
+
+---
+
+## 🔧 Environment Variables Setup
+
+See `.env.example` for all required variables. Key services:
+
+### Core Services:
+- **Twenty CRM:** Self-hosted (Hetzner VPS)
+- **n8n:** Self-hosted automation (Hostinger)
+- **Resend:** Email delivery
+- **Twilio:** WhatsApp + SMS
+- **OpenAI:** GPT-4o for WhatsApp AI (Premium+)
+- **Pirsch:** Website analytics
+
+### Analytics & Tracking:
+- **PostHog:** Self-hosted (Hetzner)
+- **Pirsch:** Per-client analytics (€19/mo each)
+
+---
+
+## 📋 Feature Matrix (What to Build When)
+
+| Feature | Starter | Professional | Premium | Enterprise |
+|---------|---------|--------------|---------|------------|
+| Landing pages | 5 | 10 | Unlimited | Unlimited |
+| Twenty CRM | ✅ | ✅ | ✅ | ✅ |
+| WhatsApp Manual | ✅ | - | - | - |
+| WhatsApp Templates | - | ✅ | - | - |
+| WhatsApp AI | - | - | ✅ | ✅ Multi-location |
+| Email Basic | ✅ (2) | - | - | - |
+| Email Follow-Ups | - | ✅ (6) | - | - |
+| Email Funnels | - | - | ✅ Custom | ✅ Enterprise |
+| SMS | 50/mo | 200/mo | 500/mo | Unlimited |
+| Local SEO Directories | 5 | 12 | 20+ | 20+ |
+| Content Updates | 1/mo | 3/mo | Unlimited | Unlimited |
+| Support | Email 48h | Chat 24h | Priority 12h | Dedicated Manager |
+| Analytics | Pirsch | Pirsch | Pirsch + PostHog | Advanced |
 
 ---
 
