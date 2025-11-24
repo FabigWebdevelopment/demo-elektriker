@@ -142,31 +142,198 @@ TWILIO_SMS_NUMBER=+4930123456789
 
 ---
 
-## 💰 Pricing Tiers (All Include WhatsApp AI!)
+## 💰 Pricing Strategy (Apple-Style Psychological Anchoring)
 
-| Feature | Starter (€299) | Professional (€499) | Premium (€799) | Enterprise (€2000+) |
-|---------|----------------|---------------------|----------------|---------------------|
-| **Landing Page** | ✅ 5 pages | ✅ 10 pages | ✅ Unlimited | ✅ Unlimited + Custom |
-| **Twenty CRM** | ✅ Unlimited leads | ✅ Unlimited leads | ✅ Unlimited leads | ✅ Unlimited leads |
-| **WhatsApp AI** | ✅ 500 conv/mo | ✅ 1500 conv/mo | ✅ 3000 conv/mo | ✅ Unlimited |
-| **Email Automation** | ✅ Basic (3 sequences) | ✅ Advanced (10 sequences) | ✅ Advanced | ✅ Custom |
-| **SMS Notifications** | ✅ 100/mo | ✅ 300/mo | ✅ 1000/mo | ✅ Unlimited |
-| **Local SEO** | ✅ Basic (5 directories) | ✅ Pro (10+ directories) | ✅ Enterprise (20+ directories) | ✅ Custom + Google Ads |
-| **Updates/Month** | 2 content updates | 5 content updates | Unlimited | Unlimited + Priority |
-| **Support** | Email (48h response) | Email + Chat (24h) | Priority (12h) | Dedicated manager |
+### The Ladder Effect™
 
-**Key Differentiator:** WhatsApp AI automation is included in ALL tiers - not just premium. Every local business gets 24/7 AI customer service.
+**Goal:** Make customers naturally upgrade by positioning "just one tier higher" as the obvious better value.
 
-**Conversation Limits Explained:**
-- 1 conversation = Complete exchange (can be 10+ messages)
-- Average business uses 200-400 conversations/month
-- Overages: €0.50/conversation (still cheaper than hiring staff)
+---
 
-**Add-ons (Optional):**
-- Google Ads Management: +€500/mo (requires €1000+ ad spend)
-- Additional WhatsApp conversations: +€100/1000 conversations
-- Custom integrations (POS, booking systems): Quote-based
-- Industry-specific features (menu management for restaurants, appointment booking for salons): +€150/mo
+### **Tier 1: Starter** - €299/mo
+*"Perfect for solo Handwerker getting started"*
+
+**What's Included:**
+- ✅ 5-page landing page
+- ✅ Twenty CRM (unlimited leads)
+- ✅ **WhatsApp AI** (300 conversations/mo)
+- ✅ Email automation (2 sequences)
+- ✅ SMS (50/mo)
+- ✅ Local SEO (5 directories)
+- ✅ 1 content update/month
+- ⏱️ Email support (48h response)
+
+**Limitations that push upgrades:**
+- ⚠️ Only 300 WhatsApp conversations (runs out mid-month for active businesses)
+- ⚠️ Only 1 content update (need to wait 30 days for changes)
+- ⚠️ Basic email sequences (no advanced nurturing)
+
+---
+
+### **Tier 2: Professional** - €449/mo ⭐ MOST POPULAR
+*"For established businesses (5-15 employees)"*
+
+**Everything in Starter, PLUS:**
+- ✅ **10-page landing page** (vs 5)
+- ✅ **WhatsApp AI: 1,000 conversations/mo** (+700 vs Starter) 🔥
+- ✅ **Email automation: 6 sequences** (vs 2)
+- ✅ **SMS: 200/mo** (vs 50)
+- ✅ **Local SEO: 12 directories** (vs 5)
+- ✅ **3 content updates/month** (vs 1)
+- ✅ **Chat support** (24h response vs email only)
+
+**The Anchor:**
+- Only €150 more than Starter, but 3x WhatsApp capacity
+- "For just €5/day extra, never run out of AI conversations"
+
+**Psychological Trigger:**
+> "Starter clients upgrade to Professional within 2 months when they hit conversation limits. Why not start here?"
+
+---
+
+### **Tier 3: Premium** - €749/mo
+*"For growing businesses ready to scale"*
+
+**Everything in Professional, PLUS:**
+- ✅ **Unlimited landing pages**
+- ✅ **WhatsApp AI: 3,000 conversations/mo** (+2,000 vs Professional) 🔥
+- ✅ **Email automation: Unlimited sequences**
+- ✅ **SMS: 500/mo**
+- ✅ **Local SEO: 20+ directories + Google My Business optimization**
+- ✅ **Unlimited content updates**
+- ✅ **Priority support** (12h response)
+- ✅ **Monthly SEO reports**
+
+**The Anchor:**
+- Only €300 more than Professional, but 3x WhatsApp capacity again
+- "Professional is great until you get 30+ customer inquiries/day"
+
+**Psychological Trigger:**
+> "Once you're at €449/mo, €749 feels like the 'serious business' tier. And you get SEO reports to justify the ROI."
+
+---
+
+### **Tier 4: Enterprise** - €1,499/mo 💎
+*"For multi-location or franchise operations"*
+
+**Everything in Premium, PLUS:**
+- ✅ **Unlimited WhatsApp AI conversations** (no caps ever)
+- ✅ **Unlimited SMS**
+- ✅ **Google Ads management** (€1000/mo ad spend included)
+- ✅ **Custom integrations** (POS, booking systems, ERP)
+- ✅ **Dedicated account manager**
+- ✅ **Quarterly strategy reviews**
+- ✅ **API access** (build your own tools)
+- ✅ **White-label option** (for agencies)
+
+**The Anchor:**
+- 2x Premium price, but removes ALL limits
+- "When WhatsApp drives 50% of your bookings, €1,499 is cheaper than hiring reception staff (€2,500+/mo)"
+
+---
+
+### 📊 Psychological Pricing Breakdown (Like Apple)
+
+| What You Pay | What You Get | Hidden Anchor |
+|--------------|--------------|---------------|
+| **€299** | 300 WhatsApp conv | "Runs out → upgrade mid-month" |
+| **€449** (+€150) | 1,000 WhatsApp conv | "3x more for just €5/day" ⭐ |
+| **€749** (+€300) | 3,000 WhatsApp conv | "2x price = 3x capacity" |
+| **€1,499** (+€750) | **Unlimited** | "Remove anxiety, scale freely" 💎 |
+
+### 🧠 The Psychology:
+
+**Starter → Professional:**
+- Customer thinks: "€299 is cheap, but I'll hit 300 conversations in 2 weeks. €449 is only €5/day more and I get 3x capacity. No-brainer."
+
+**Professional → Premium:**
+- Customer thinks: "I'm already at €449. For €300 more I get unlimited updates, 3x WhatsApp, and SEO reports to show my boss the ROI. Makes sense."
+
+**Premium → Enterprise:**
+- Customer thinks: "€749 works, but we have 3 locations. For 2x the price, we get unlimited everything + Google Ads + dedicated manager. That's cheaper than hiring."
+
+---
+
+### 🎯 Upsell Triggers (Automated in n8n)
+
+**When customer hits 80% of WhatsApp limit:**
+```
+Email: "You're crushing it! 🚀 You've used 240/300 WhatsApp conversations this month.
+Upgrade to Professional (€449) for 1,000/mo and never worry about limits again."
+
+CTA: Upgrade for €5/day
+```
+
+**When customer requests 2nd content update in Starter:**
+```
+Email: "Need more updates? Professional includes 3 updates/mo (vs waiting 30 days).
+Plus 3x WhatsApp capacity for €150 more."
+
+CTA: Upgrade to Professional
+```
+
+**When Premium customer has 3+ months of 2,500+ conversations:**
+```
+Email: "You're consistently near your 3,000 conversation limit. Enterprise removes
+ALL caps for €750 more + includes Google Ads management. Let's scale without limits."
+
+CTA: Book Enterprise Demo
+```
+
+---
+
+### 💡 Add-Ons (One-Time or Recurring)
+
+These are positioned as "unlocks" rather than core features:
+
+| Add-On | Price | Who Needs It |
+|--------|-------|--------------|
+| **Extra WhatsApp Pack** | +€100/mo | +1,000 conversations (any tier) |
+| **Industry Template** | €500 one-time | Restaurant menu system, salon booking, etc. |
+| **Custom Domain Email** | +€25/mo | Professional branded email (@mueller-elektrik.de) |
+| **Advanced Analytics** | +€99/mo | Conversion tracking, heatmaps, session replays |
+| **Multilingual Website** | +€200/mo | Add English, Turkish, Polish versions |
+| **Priority Onboarding** | €500 one-time | Go live in 48h instead of 7 days |
+
+---
+
+### 🎁 Promotional Anchors (Limited Time)
+
+**"Storage Upgrade" Strategy (Like Apple):**
+
+Normal pricing:
+- Starter: €299 (300 WhatsApp conv)
+- Professional: €449 (1,000 WhatsApp conv)
+
+**Promotional anchor:**
+> "Upgrade Starter to 600 conversations for +€75/mo"
+>
+> **Now Starter costs €374** - which makes Professional at €449 look like a steal for 1,000 conversations.
+
+Customer thinks: "Why pay €374 for 600 when I can pay €75 more (€449) and get 1,000 conversations PLUS chat support, more email sequences, etc?"
+
+**Result:** 80% choose Professional instead of "upgraded Starter"
+
+---
+
+### 📈 Revenue Optimization
+
+**Target Distribution:**
+- 20% Starter (€299) → €60/customer avg
+- 50% Professional (€449) → €224/customer avg ⭐
+- 25% Premium (€749) → €187/customer avg
+- 5% Enterprise (€1,499) → €75/customer avg
+
+**Average Revenue Per Client:** ~€546/mo
+
+**20 clients = €10,920 MRR**
+**30 clients = €16,380 MRR**
+
+**With natural upgrades over 12 months:**
+- 30% of Starter → Professional (+€150/mo each)
+- 20% of Professional → Premium (+€300/mo each)
+
+**Year 1 MRR Growth:** €16k → €22k+ organically
 
 ---
 
