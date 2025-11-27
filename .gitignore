@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code
+.claude/
+
+# Temporary/backup files
+*.new
+*.bak
+*.archive.md
+*.optimized.md
+
+# Reference images for AI generation
+public/reference.jpg
