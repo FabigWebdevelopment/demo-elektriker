@@ -1,0 +1,879 @@
+{
+  "meta": {
+    "title": "German Local Business Landing Page Audit Checklist",
+    "version": "1.0.0",
+    "created": "2025-01-27",
+    "purpose": "Systematic conversion optimization audit for German local service businesses",
+    "scoring": {
+      "critical": 10,
+      "high": 5,
+      "medium": 2,
+      "maxScore": "Sum of all applicable criteria"
+    }
+  },
+
+  "categories": [
+    {
+      "id": "visual-hierarchy",
+      "name": "Visual Hierarchy & Scanning Patterns",
+      "weight": 15,
+      "description": "How users visually navigate and process the page",
+      "criteria": [
+        {
+          "id": "vh-001",
+          "criterion": "F-Pattern Optimization",
+          "description": "Key information placed along F-pattern hotspots (top horizontal, left vertical)",
+          "howToCheck": [
+            "Take screenshot and overlay F-pattern template",
+            "Logo, headline, and primary CTA should fall on F-pattern",
+            "Left margin should contain scannable headlines",
+            "First two lines should contain most important info"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Eye-tracking studies show users scan in F-pattern, spending 80% of attention on left side and top",
+          "passCriteria": "3+ key elements on F-pattern hotspots",
+          "failIndicators": ["Important info in right margin", "Key CTAs below fold on right side"]
+        },
+        {
+          "id": "vh-002",
+          "criterion": "Above-the-Fold Value Proposition",
+          "description": "Core offer understandable without scrolling",
+          "howToCheck": [
+            "View on 1366x768 (most common) and mobile",
+            "Can you answer: What do they do? Who is it for? Why them?",
+            "Is there a clear next action visible?",
+            "Time yourself - can you understand in under 5 seconds?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Primacy effect - first impression determines engagement. 57% of users don't scroll.",
+          "passCriteria": "All 3 questions answerable in 5 seconds",
+          "failIndicators": ["Generic headline", "No CTA visible", "Slider/carousel as hero"]
+        },
+        {
+          "id": "vh-003",
+          "criterion": "Visual Weight Distribution",
+          "description": "Important elements have proportionally larger visual weight",
+          "howToCheck": [
+            "Squint test - blur the page, do important elements still stand out?",
+            "Size hierarchy: H1 > H2 > H3 > body",
+            "CTA button is the most visually prominent element",
+            "Hero image supports (not competes with) headline"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Visual weight creates hierarchy; larger/bolder = more important",
+          "passCriteria": "Clear 3-level hierarchy visible in squint test",
+          "failIndicators": ["Everything same visual weight", "Image overpowers text", "Multiple competing focal points"]
+        },
+        {
+          "id": "vh-004",
+          "criterion": "Eye Flow Path",
+          "description": "Natural visual path leads to conversion action",
+          "howToCheck": [
+            "Track where your eye goes first, second, third",
+            "Does the path lead to CTA?",
+            "Are there 'dead ends' where the eye stops?",
+            "Arrows, lines, or gaze direction guiding toward CTA?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Directional cues (explicit and implicit) guide attention toward desired actions",
+          "passCriteria": "Natural 3-step path ending at CTA",
+          "failIndicators": ["Eye wanders without purpose", "CTA not in natural eye flow", "Competing visual elements"]
+        },
+        {
+          "id": "vh-005",
+          "criterion": "Whitespace Usage",
+          "description": "Strategic whitespace creates breathing room and focus",
+          "howToCheck": [
+            "Is there sufficient padding around key elements?",
+            "Does whitespace group related elements?",
+            "Is the page scannable or cluttered?",
+            "Important elements isolated with whitespace?"
+          ],
+          "priority": "medium",
+          "psychologicalPrinciple": "Whitespace increases comprehension by 20% and draws attention to isolated elements",
+          "passCriteria": "Consistent spacing, no crowded sections",
+          "failIndicators": ["Elements touching edges", "No visual grouping", "Wall of content"]
+        }
+      ]
+    },
+
+    {
+      "id": "conversion-psychology",
+      "name": "Conversion Psychology",
+      "weight": 20,
+      "description": "Psychological triggers that drive action",
+      "criteria": [
+        {
+          "id": "cp-001",
+          "criterion": "Cognitive Load Reduction",
+          "description": "Page doesn't overwhelm with choices or information",
+          "howToCheck": [
+            "Count number of choices/links above fold (should be <7)",
+            "Is there ONE clear primary action?",
+            "Are secondary actions visually subordinate?",
+            "Can you explain the page in one sentence?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Hick's Law - decision time increases with number of choices. Miller's Law - 7+/-2 items max.",
+          "passCriteria": "1 primary CTA, max 3 secondary options, <7 nav items",
+          "failIndicators": ["Multiple equal CTAs", "10+ navigation items", "Information overload"]
+        },
+        {
+          "id": "cp-002",
+          "criterion": "Loss Aversion Triggers",
+          "description": "Messaging frames the cost of NOT acting",
+          "howToCheck": [
+            "Is there mention of what they're missing/losing?",
+            "Limited availability messaging present?",
+            "Cost of delay mentioned?",
+            "Problem-agitation before solution?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Losses are felt 2x more powerfully than equivalent gains (Kahneman)",
+          "passCriteria": "At least 2 loss-framed elements present",
+          "failIndicators": ["Only positive framing", "No urgency signals", "No problem awareness"],
+          "examples": {
+            "good": [
+              "Verpassen Sie nicht den Sommer-Bonus",
+              "Jeden Tag ohne Wallbox kostet Sie €X an Tankkosten",
+              "Nur noch 3 Termine im Januar frei"
+            ],
+            "bad": [
+              "Kontaktieren Sie uns",
+              "Wir freuen uns auf Sie"
+            ]
+          }
+        },
+        {
+          "id": "cp-003",
+          "criterion": "Social Proof at Decision Points",
+          "description": "Testimonials/reviews placed where doubt occurs",
+          "howToCheck": [
+            "Is social proof visible near CTAs?",
+            "Reviews near pricing?",
+            "Testimonials before form?",
+            "Trust badges at checkout/form?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Social proof reduces uncertainty at high-friction moments",
+          "passCriteria": "Social proof within 200px of every CTA",
+          "failIndicators": ["Reviews only in dedicated section", "No proof near conversion points", "Generic testimonials far from CTAs"]
+        },
+        {
+          "id": "cp-004",
+          "criterion": "Authority Signals",
+          "description": "Expertise and credibility clearly established",
+          "howToCheck": [
+            "Years of experience mentioned?",
+            "Number of projects/customers shown?",
+            "Certifications visible (Meisterbetrieb, VDE, TUV)?",
+            "Media mentions or awards?",
+            "Team credentials shown?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Authority principle (Cialdini) - we trust experts and credentials",
+          "passCriteria": "3+ authority signals visible, at least 1 above fold",
+          "failIndicators": ["No credentials shown", "Authority signals buried", "Claims without proof"],
+          "germanSpecificSignals": [
+            "Meisterbetrieb",
+            "Innungsmitglied",
+            "VDE-zertifiziert",
+            "TUV-gepruft",
+            "X Jahre Erfahrung",
+            "X+ zufriedene Kunden"
+          ]
+        },
+        {
+          "id": "cp-005",
+          "criterion": "Urgency Without Manipulation",
+          "description": "Legitimate scarcity or time-sensitivity communicated",
+          "howToCheck": [
+            "Is urgency based on real constraints?",
+            "Limited team capacity mentioned?",
+            "Seasonal relevance?",
+            "Real deadlines (funding programs, etc.)?"
+          ],
+          "priority": "medium",
+          "psychologicalPrinciple": "Scarcity increases perceived value, but fake urgency destroys trust",
+          "passCriteria": "1-2 legitimate urgency elements, verifiable",
+          "failIndicators": ["Fake countdown timers", "'Only 1 left!' always", "Manipulative scarcity"],
+          "examples": {
+            "legitimate": [
+              "Aktuelle Wartezeit: 2-3 Wochen",
+              "KfW-Forderung endet am 31.12.",
+              "Nur noch 3 Termine diese Woche frei"
+            ],
+            "manipulative": [
+              "Angebot endet in 59:59!",
+              "Letzte Chance!",
+              "Nur heute 50% Rabatt"
+            ]
+          }
+        },
+        {
+          "id": "cp-006",
+          "criterion": "Reciprocity Principle",
+          "description": "Free value given before asking for commitment",
+          "howToCheck": [
+            "Is there a lead magnet or free resource?",
+            "Free consultation prominently offered?",
+            "Valuable content before the pitch?",
+            "Free quote/assessment available?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Reciprocity - giving first creates obligation to reciprocate",
+          "passCriteria": "At least 1 no-strings-attached value offer",
+          "failIndicators": ["Asking before giving", "All content gated", "No free value"],
+          "examples": [
+            "Kostenlose Beratung",
+            "Unverbindliches Angebot",
+            "Gratis Checkliste",
+            "Kostenloser Vor-Ort-Check"
+          ]
+        },
+        {
+          "id": "cp-007",
+          "criterion": "Price Anchoring",
+          "description": "Value perception established before price reveal",
+          "howToCheck": [
+            "Is the full value communicated before price?",
+            "Comparison to alternatives shown?",
+            "ROI or payback period mentioned?",
+            "Price in context of value gained?"
+          ],
+          "priority": "medium",
+          "psychologicalPrinciple": "Anchoring effect - first number influences perception of subsequent numbers",
+          "passCriteria": "Value established before price; comparison anchor present",
+          "failIndicators": ["Price shown without context", "No value framing", "Competitor comparison missing"],
+          "examples": {
+            "good": "Normale Tankkosten: 150/Monat. Mit eigener Wallbox: nur 50/Monat. Ersparnis: 1.200/Jahr. Investition: ab 1.499.",
+            "bad": "Wallbox-Installation ab 1.499."
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "visual-first-design",
+      "name": "Visual-First Design",
+      "weight": 15,
+      "description": "Images and visuals communicate faster than text",
+      "criteria": [
+        {
+          "id": "vf-001",
+          "criterion": "3-Second Comprehension Test",
+          "description": "Offer understood through visuals alone in 3 seconds",
+          "howToCheck": [
+            "Show page to someone for 3 seconds, then hide",
+            "Ask: What do they sell/do? Could they answer?",
+            "Do images tell the story without text?",
+            "Is the outcome/transformation visible?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Picture superiority effect - images processed 60,000x faster than text",
+          "passCriteria": "Untrained viewer can identify business type and offer in 3 seconds",
+          "failIndicators": ["Stock photos unrelated to service", "No images of work/results", "Text-heavy hero"]
+        },
+        {
+          "id": "vf-002",
+          "criterion": "Image-to-Text Ratio",
+          "description": "Visual content dominates, text supports",
+          "howToCheck": [
+            "Estimate % of viewport that is images vs text",
+            "Each section has relevant visual?",
+            "Images are large enough to be meaningful?",
+            "Text blocks broken up by visuals?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Visual content increases engagement by 80% and recall by 65%",
+          "passCriteria": "60%+ of content area is visual; max 3 lines of text between images",
+          "failIndicators": ["Text walls", "Tiny thumbnails", "Generic stock photos", "No visuals in hero"]
+        },
+        {
+          "id": "vf-003",
+          "criterion": "Icon Usage for Quick Comprehension",
+          "description": "Icons accelerate understanding of features/benefits",
+          "howToCheck": [
+            "Are key benefits shown with icons?",
+            "Icons consistent in style?",
+            "Icons meaningful (not decorative only)?",
+            "Process steps visualized?"
+          ],
+          "priority": "medium",
+          "psychologicalPrinciple": "Icons serve as visual shorthand, reducing cognitive load",
+          "passCriteria": "All major features/benefits have relevant icons; consistent icon style",
+          "failIndicators": ["No icons", "Inconsistent icon styles", "Meaningless decorative icons"]
+        },
+        {
+          "id": "vf-004",
+          "criterion": "Stats and Numbers Visualization",
+          "description": "Key numbers pop and are easily scannable",
+          "howToCheck": [
+            "Are important numbers large and prominent?",
+            "Stats in trust bar or hero?",
+            "Numbers broken into digestible chunks?",
+            "Context provided for numbers?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Numbers provide concrete proof; large numbers create impact",
+          "passCriteria": "3+ stats prominently displayed; at least 1 above fold",
+          "failIndicators": ["Numbers buried in text", "No quantifiable claims", "Stats same size as body text"],
+          "examples": [
+            "500+ Installationen",
+            "4.9 Google Bewertung",
+            "15 Jahre Erfahrung",
+            "98% Kundenzufriedenheit"
+          ]
+        },
+        {
+          "id": "vf-005",
+          "criterion": "Before/After or Transformation Visuals",
+          "description": "Visual proof of results/outcomes",
+          "howToCheck": [
+            "Are before/after images shown?",
+            "Is the transformation/outcome visualized?",
+            "Customer success stories with visuals?",
+            "End result prominently featured?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Visual proof of transformation creates desire and reduces skepticism",
+          "passCriteria": "At least 1 before/after or transformation visual present",
+          "failIndicators": ["No proof of results", "Only 'before' shown", "Generic outcome claims"]
+        }
+      ]
+    },
+
+    {
+      "id": "information-architecture",
+      "name": "Information Architecture",
+      "weight": 15,
+      "description": "Right information at the right time in the right order",
+      "criteria": [
+        {
+          "id": "ia-001",
+          "criterion": "Progressive Disclosure",
+          "description": "Information revealed in appropriate sequence as user scrolls",
+          "howToCheck": [
+            "Does page follow: Problem > Solution > Proof > Action?",
+            "Is complex info hidden until needed (accordions, tabs)?",
+            "Does each section answer natural next question?",
+            "Can user get deeper if they want?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Reducing upfront complexity increases engagement; reveal depth progressively",
+          "passCriteria": "Logical flow; complex details in expandable sections; each scroll reveals next logical step",
+          "failIndicators": ["All info dumped at once", "Technical details too early", "Random section order"]
+        },
+        {
+          "id": "ia-002",
+          "criterion": "Benefit-First Communication",
+          "description": "Benefits stated before features; outcomes before methods",
+          "howToCheck": [
+            "Does headline state a benefit, not a feature?",
+            "Each feature tied to customer outcome?",
+            "So what? test on each claim",
+            "Customer-centric vs company-centric language?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Customers buy outcomes, not products. Benefits create emotional connection.",
+          "passCriteria": "Every feature has explicit benefit; headline is benefit-focused",
+          "failIndicators": ["Feature lists without benefits", "Technical specs prominent", "We do X vs You get Y"],
+          "examples": {
+            "feature": "11kW Wallbox mit App-Steuerung",
+            "benefit": "Laden Sie uber Nacht - morgens ist Ihr Auto voll, wahrend Sie schlafen"
+          }
+        },
+        {
+          "id": "ia-003",
+          "criterion": "Objection Handling Placement",
+          "description": "Common objections addressed before they become blockers",
+          "howToCheck": [
+            "Are price concerns addressed before/near CTA?",
+            "Is FAQ visible without deep scrolling?",
+            "Common concerns proactively answered?",
+            "Risk reversal near conversion points?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Unaddressed objections create friction; preemptive answers build trust",
+          "passCriteria": "Top 3 objections addressed; FAQ before final CTA",
+          "failIndicators": ["FAQ buried at bottom", "No pricing transparency", "Objections ignored"],
+          "commonGermanObjections": [
+            "Was kostet das? (ab-Preise zeigen)",
+            "Wie lange dauert das? (Zeitrahmen angeben)",
+            "Sind Sie zertifiziert? (Qualifikationen zeigen)",
+            "Was wenn etwas schief geht? (Garantien zeigen)"
+          ]
+        },
+        {
+          "id": "ia-004",
+          "criterion": "Contact Friction Reduction",
+          "description": "Contacting the business is as easy as possible",
+          "howToCheck": [
+            "How many clicks to reach contact form?",
+            "Is phone number clickable?",
+            "WhatsApp option available?",
+            "Form has minimal required fields?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Every additional step loses 20% of potential conversions",
+          "passCriteria": "Contact possible in 1 click; phone prominent; form has <5 required fields",
+          "failIndicators": ["Contact buried in footer only", "Long forms", "No direct phone", "No WhatsApp"]
+        },
+        {
+          "id": "ia-005",
+          "criterion": "Scannable Content Structure",
+          "description": "Content optimized for scanning, not deep reading",
+          "howToCheck": [
+            "Are paragraphs short (2-3 lines max)?",
+            "Bullet points for lists?",
+            "Bold/highlight key terms?",
+            "Clear section headers?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "79% of users scan; only 16% read word-by-word (Nielsen)",
+          "passCriteria": "No paragraph >3 lines; lists as bullets; subheadings every 300px",
+          "failIndicators": ["Dense paragraphs", "No formatting", "Walls of text"]
+        }
+      ]
+    },
+
+    {
+      "id": "cta-optimization",
+      "name": "CTA Optimization",
+      "weight": 15,
+      "description": "Call-to-action effectiveness",
+      "criteria": [
+        {
+          "id": "cta-001",
+          "criterion": "Primary vs Secondary CTA Clarity",
+          "description": "One obvious main action; supporting actions subordinate",
+          "howToCheck": [
+            "Is there ONE clear primary CTA?",
+            "Is primary visually dominant (size, color, contrast)?",
+            "Are secondary CTAs (phone, email) visually lighter?",
+            "Would a stranger know what to click?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Single clear action reduces decision paralysis; hierarchy guides choice",
+          "passCriteria": "1 primary CTA per viewport; obviously more prominent than alternatives",
+          "failIndicators": ["Multiple equally-prominent CTAs", "Primary blends with background", "Unclear next step"]
+        },
+        {
+          "id": "cta-002",
+          "criterion": "CTA Visibility and Contrast",
+          "description": "CTA button is the most visually prominent element",
+          "howToCheck": [
+            "Does CTA pass 3:1 contrast ratio?",
+            "Is CTA visible without scrolling?",
+            "Does CTA color differ from other elements?",
+            "Size appropriate for thumb tap (min 44px)?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Von Restorff effect - distinctive elements are remembered and noticed",
+          "passCriteria": "CTA is most contrasting element; visible in squint test; >44px tap target",
+          "failIndicators": ["Low contrast button", "Blends with design", "Too small to tap"]
+        },
+        {
+          "id": "cta-003",
+          "criterion": "Action-Oriented Copy",
+          "description": "CTA text describes what happens next in user's benefit terms",
+          "howToCheck": [
+            "Does CTA start with action verb?",
+            "Does it describe outcome, not just action?",
+            "Is it specific to this page/offer?",
+            "Avoids generic (Submit, Click Here)?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Specific, benefit-oriented CTAs outperform generic by 90%+",
+          "passCriteria": "Verb + benefit format; specific to offer",
+          "failIndicators": ["'Absenden'", "'Klicken Sie hier'", "'Kontakt'", "'Mehr erfahren'"],
+          "examples": {
+            "good": [
+              "Kostenlose Beratung sichern",
+              "Jetzt Angebot anfordern",
+              "Termin vereinbaren",
+              "Wallbox-Check starten"
+            ],
+            "bad": [
+              "Submit",
+              "Absenden",
+              "Kontakt",
+              "Hier klicken"
+            ]
+          }
+        },
+        {
+          "id": "cta-004",
+          "criterion": "Anxiety-Reducing Micro-Copy",
+          "description": "Small text near CTA that reduces friction",
+          "howToCheck": [
+            "Is there text below CTA reducing risk?",
+            "'Keine Kosten', 'Unverbindlich', etc.?",
+            "Response time commitment?",
+            "Privacy reassurance near form?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Micro-copy addresses last-second objections at the decision point",
+          "passCriteria": "Micro-copy beneath every form CTA; addresses top anxiety",
+          "failIndicators": ["Naked CTA button", "No reassurances", "Form without privacy note"],
+          "examples": [
+            "100% kostenlos und unverbindlich",
+            "Antwort innerhalb von 24 Stunden",
+            "Ihre Daten sind bei uns sicher",
+            "Kein Spam, versprochen"
+          ]
+        },
+        {
+          "id": "cta-005",
+          "criterion": "Multiple CTAs at Scroll Breakpoints",
+          "description": "CTAs appear at logical points throughout the page",
+          "howToCheck": [
+            "Is CTA visible above fold?",
+            "CTA after each major section?",
+            "Sticky CTA on mobile?",
+            "Final CTA before footer?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Different users convert at different points; always make action accessible",
+          "passCriteria": "CTA visible every 2 scrolls; sticky on mobile; final CTA section",
+          "failIndicators": ["Single CTA at bottom only", "Long gaps without CTA", "No sticky mobile CTA"]
+        }
+      ]
+    },
+
+    {
+      "id": "trust-architecture",
+      "name": "Trust Architecture",
+      "weight": 10,
+      "description": "Building credibility and reducing perceived risk",
+      "criteria": [
+        {
+          "id": "ta-001",
+          "criterion": "Trust Signals Above the Fold",
+          "description": "Immediate credibility indicators visible without scrolling",
+          "howToCheck": [
+            "Google rating visible in hero?",
+            "Years/experience mentioned?",
+            "Certification badges shown?",
+            "Customer count or project stats?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Trust established in first 50ms; early signals prevent bounce",
+          "passCriteria": "2+ trust signals visible above fold on both desktop and mobile",
+          "failIndicators": ["No trust signals in hero", "Trust badges in footer only", "No social proof above fold"],
+          "examples": [
+            "Google: 4.9 (127 Bewertungen)",
+            "Meisterbetrieb seit 2008",
+            "500+ Installationen",
+            "VDE-zertifiziert"
+          ]
+        },
+        {
+          "id": "ta-002",
+          "criterion": "Testimonial Authenticity",
+          "description": "Testimonials feel real and verifiable",
+          "howToCheck": [
+            "Full names used (not just 'M.S.')?",
+            "Photos of real customers?",
+            "Specific details in testimonials?",
+            "Link to Google reviews?",
+            "Location/context mentioned?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Specificity = credibility; vague praise is suspicious",
+          "passCriteria": "Testimonials have full name, photo, specific detail, verifiable source",
+          "failIndicators": ["Initials only", "Stock photos", "Generic praise", "No review link"],
+          "examples": {
+            "authentic": "Thomas M., Munchen-Schwabing: 'Die Wallbox wurde innerhalb von 3 Tagen installiert. Besonders beeindruckt hat mich die saubere Kabelverlegung.'",
+            "fake-feeling": "M.S.: 'Toller Service! Sehr zu empfehlen!'"
+          }
+        },
+        {
+          "id": "ta-003",
+          "criterion": "Certification Visibility",
+          "description": "Professional qualifications prominently displayed",
+          "howToCheck": [
+            "Relevant certifications shown?",
+            "Logos of certifying bodies?",
+            "Clickable to verify?",
+            "Mentioned in text as well as visual?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Third-party validation is more trustworthy than self-claims",
+          "passCriteria": "All relevant certifications displayed with official logos",
+          "failIndicators": ["No certifications shown", "Text-only mentions", "Outdated certifications"],
+          "germanCertifications": [
+            "Meisterbetrieb",
+            "Innungsmitglied",
+            "VDE-zertifiziert",
+            "TUV-gepruft",
+            "ISO 9001",
+            "Fachbetrieb fur E-Mobilitat"
+          ]
+        },
+        {
+          "id": "ta-004",
+          "criterion": "Why Us Positioning",
+          "description": "Clear differentiation from competitors",
+          "howToCheck": [
+            "Is there a 'Warum wir?' section?",
+            "Unique selling points clearly stated?",
+            "Comparison to alternatives?",
+            "Specific to this business (not generic)?"
+          ],
+          "priority": "medium",
+          "psychologicalPrinciple": "Differentiation reduces comparison shopping; unique = memorable",
+          "passCriteria": "3+ unique differentiators clearly communicated",
+          "failIndicators": ["Generic claims ('beste Qualitat')", "No differentiation", "Same as every competitor"]
+        },
+        {
+          "id": "ta-005",
+          "criterion": "Risk Reversal Messaging",
+          "description": "Guarantees and assurances that reduce perceived risk",
+          "howToCheck": [
+            "Money-back or satisfaction guarantee?",
+            "Warranty information prominent?",
+            "Free trial/consultation offered?",
+            "What happens if something goes wrong?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Risk reversal shifts burden from buyer to seller, reducing friction",
+          "passCriteria": "At least 1 clear guarantee; warranty terms visible",
+          "failIndicators": ["No guarantees", "Risk fully on customer", "Warranty hidden in fine print"],
+          "examples": [
+            "5 Jahre Garantie auf alle Arbeiten",
+            "Festpreis-Garantie - keine versteckten Kosten",
+            "Nicht zufrieden? Wir kommen kostenlos zuruck",
+            "Kostenlose Nachbesserung"
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "mobile-first",
+      "name": "Mobile-First Considerations",
+      "weight": 10,
+      "description": "Optimized for 70%+ mobile traffic",
+      "criteria": [
+        {
+          "id": "mf-001",
+          "criterion": "Thumb-Friendly Tap Targets",
+          "description": "All interactive elements easily tappable with thumb",
+          "howToCheck": [
+            "All buttons min 44x44px?",
+            "Adequate spacing between links?",
+            "Primary CTA in thumb zone (bottom 2/3)?",
+            "No tiny links in paragraphs?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Frustrated users leave; easy interaction = higher conversion",
+          "passCriteria": "All interactive elements 44px+; 8px+ spacing; CTA in thumb zone",
+          "failIndicators": ["Small buttons", "Links too close together", "CTA at top only"]
+        },
+        {
+          "id": "mf-002",
+          "criterion": "Mobile Content Prioritization",
+          "description": "Most important content visible first on mobile",
+          "howToCheck": [
+            "Hero content not truncated on mobile?",
+            "Key info not hidden in collapsed sections?",
+            "Phone number prominent?",
+            "CTA visible without scrolling?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Mobile users are more task-focused; surface key info immediately",
+          "passCriteria": "Value prop, CTA, and phone visible in first mobile viewport",
+          "failIndicators": ["Important content below fold", "Desktop layout squeezed", "Hamburger-hidden key info"]
+        },
+        {
+          "id": "mf-003",
+          "criterion": "Mobile Page Speed",
+          "description": "Page loads quickly on mobile networks",
+          "howToCheck": [
+            "Run PageSpeed Insights on mobile",
+            "LCP under 2.5 seconds?",
+            "Total page weight under 2MB?",
+            "Images properly sized and compressed?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "53% of mobile users abandon sites that take >3 seconds to load",
+          "passCriteria": "Mobile PageSpeed score >80; LCP <2.5s",
+          "failIndicators": ["Speed score <70", "LCP >4s", "Uncompressed images"]
+        },
+        {
+          "id": "mf-004",
+          "criterion": "Sticky CTA on Mobile",
+          "description": "Primary action always accessible during scroll",
+          "howToCheck": [
+            "Is there a sticky header or footer CTA?",
+            "Does it not obstruct content?",
+            "Is it the primary action (call/WhatsApp)?",
+            "Does it disappear when scrolling up (optional)?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Persistent CTA reduces friction; action always one tap away",
+          "passCriteria": "Sticky CTA bar with phone/WhatsApp; not more than 60px height",
+          "failIndicators": ["No sticky CTA", "Oversized sticky bar", "Wrong action in sticky"]
+        },
+        {
+          "id": "mf-005",
+          "criterion": "Click-to-Call Implementation",
+          "description": "Phone number works with one tap",
+          "howToCheck": [
+            "Phone number wrapped in tel: link?",
+            "Works on actual mobile device?",
+            "Phone number visible (not just icon)?",
+            "Tracking implemented?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "Removing steps to call = more calls. 60% of mobile searches result in calls.",
+          "passCriteria": "Phone number clickable; opens dialer; visible in hero and sticky",
+          "failIndicators": ["Phone not clickable", "Icon only", "Phone in footer only"]
+        }
+      ]
+    },
+
+    {
+      "id": "german-local",
+      "name": "German Local Business Specifics",
+      "weight": 10,
+      "description": "Cultural and regulatory considerations for German market",
+      "criteria": [
+        {
+          "id": "gl-001",
+          "criterion": "Du vs Sie Consistency",
+          "description": "Consistent formal/informal address throughout",
+          "howToCheck": [
+            "Is the entire page consistent in Sie or Du?",
+            "Does the tone match the audience?",
+            "Forms match the rest of the page?",
+            "CTAs match the tone?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Inconsistency in address feels unprofessional; breaks trust",
+          "passCriteria": "100% consistent throughout all copy, forms, and CTAs",
+          "failIndicators": ["Mixed Du/Sie", "Formal in copy, informal in CTA", "Form fields different from page"],
+          "guidance": {
+            "useSie": ["B2B services", "Medical/legal", "Luxury services", "Older demographic"],
+            "useDu": ["Creative services", "Younger demographic", "Casual dining", "Fitness/wellness"]
+          }
+        },
+        {
+          "id": "gl-002",
+          "criterion": "Local Signals (City/Region)",
+          "description": "Clear local presence and service area",
+          "howToCheck": [
+            "City mentioned in headline?",
+            "Service area clearly defined?",
+            "Local landmarks/references?",
+            "District-specific pages for SEO?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Local businesses are trusted more; proximity = reliability",
+          "passCriteria": "City in H1; service area on homepage; local references present",
+          "failIndicators": ["Generic national feel", "No city mention above fold", "No service area defined"],
+          "examples": [
+            "Ihr Elektriker in Munchen",
+            "Wallbox-Installation in Munchen und Umgebung",
+            "Wir kommen zu Ihnen nach Schwabing, Bogenhausen, Haidhausen..."
+          ]
+        },
+        {
+          "id": "gl-003",
+          "criterion": "German Trust Markers",
+          "description": "Culture-specific credibility signals",
+          "howToCheck": [
+            "Meisterbetrieb badge shown (if applicable)?",
+            "Innungsmitgliedschaft mentioned?",
+            "German certifications prominent?",
+            "Festpreis-Garantie offered?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Germans particularly value formal qualifications and guarantees",
+          "passCriteria": "At least 2 German-specific trust markers displayed",
+          "failIndicators": ["Only generic trust signals", "No German certifications", "American-style testimonials only"],
+          "germanTrustMarkers": [
+            "Meisterbetrieb",
+            "Innungsmitglied",
+            "VDE-zertifiziert",
+            "TUV-gepruft",
+            "Made in Germany",
+            "Festpreis-Garantie",
+            "Fachbetrieb",
+            "Handwerkskammer-Mitglied"
+          ]
+        },
+        {
+          "id": "gl-004",
+          "criterion": "DSGVO Compliance Signals",
+          "description": "Privacy compliance visibly communicated",
+          "howToCheck": [
+            "Cookie consent properly implemented?",
+            "Privacy link in footer?",
+            "Data usage explained at forms?",
+            "Impressum easily accessible?"
+          ],
+          "priority": "critical",
+          "psychologicalPrinciple": "DSGVO compliance is expected; non-compliance = unprofessional",
+          "passCriteria": "Cookie banner present; privacy policy linked; form privacy note; Impressum in footer",
+          "failIndicators": ["No cookie banner", "No privacy policy", "Hidden Impressum", "No form consent checkbox"],
+          "requirements": [
+            "Cookie consent before tracking",
+            "Privacy policy (Datenschutzerklarung)",
+            "Impressum with full legal details",
+            "Form consent for data processing"
+          ]
+        },
+        {
+          "id": "gl-005",
+          "criterion": "German Language Quality",
+          "description": "Proper German without translation artifacts",
+          "howToCheck": [
+            "No obvious translation errors?",
+            "Proper German sentence structure?",
+            "Umlauts correctly displayed?",
+            "Industry-appropriate terminology?"
+          ],
+          "priority": "high",
+          "psychologicalPrinciple": "Language errors signal carelessness or foreign origin; reduces trust",
+          "passCriteria": "Native-level German throughout; no translation artifacts",
+          "failIndicators": ["Literal translations", "Missing umlauts", "Wrong word order", "Denglisch overuse"]
+        }
+      ]
+    }
+  ],
+
+  "scoringGuide": {
+    "howToScore": [
+      "1. Go through each criterion",
+      "2. Mark as Pass (full points), Partial (half points), or Fail (0 points)",
+      "3. Weight by priority: Critical = 10pts, High = 5pts, Medium = 2pts",
+      "4. Calculate percentage: (earned points / max points) * 100"
+    ],
+    "interpretation": {
+      "90-100": "Excellent - Minor optimizations only",
+      "75-89": "Good - Some improvements needed",
+      "60-74": "Fair - Significant issues to address",
+      "below60": "Poor - Major overhaul required"
+    },
+    "prioritization": "Address all Critical items first, then High, then Medium"
+  },
+
+  "quickAuditChecklist": {
+    "description": "5-minute quick check for rapid assessment",
+    "items": [
+      "[ ] 3-second test: Can you understand the offer?",
+      "[ ] Is there ONE clear CTA above the fold?",
+      "[ ] Phone number visible and clickable?",
+      "[ ] Trust signals (reviews/certs) visible above fold?",
+      "[ ] Mobile-friendly (test on phone)?",
+      "[ ] Page loads fast (<3 seconds)?",
+      "[ ] German language correct and consistent?",
+      "[ ] No generic stock photos?",
+      "[ ] FAQ addresses price/timing objections?",
+      "[ ] DSGVO compliant (cookie banner, Impressum)?"
+    ],
+    "scoring": "8-10 pass = good, 5-7 pass = needs work, <5 pass = poor"
+  }
+}
