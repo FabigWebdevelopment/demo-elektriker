@@ -80,13 +80,122 @@ These businesses lose customers daily because:
 
 | Tier | Price | What They Get |
 |------|-------|---------------|
-| **Starter** | €299/mo | 5-page site, CRM, manual WhatsApp, basic emails |
-| **Professional** ⭐ | €449/mo | 10-page site, WhatsApp templates, email sequences, 12 directories |
-| **Premium** | €749/mo | Unlimited pages, WhatsApp AI (24/7), custom funnels |
-| **Enterprise** | €1,499/mo | Multi-location, Google Ads, dedicated manager |
+| **Starter** | €299/mo | 5-page site, CRM, basic email confirmations |
+| **Professional** ⭐ | €449/mo | 10-page site, email sequences (day 1,3,7), 12 directories |
+| **Premium** | €749/mo | 20-page site, SMS/WhatsApp notifications, custom funnels, n8n automations |
+| **Enterprise** | €1,499/mo | 50-page site, multi-location, WhatsApp AI (24/7), Google Ads, dedicated manager |
 
 **Target:** 60% of clients on Professional (€449/mo)
 **Goal:** 30 clients Year 1 = €16,830 MRR
+
+### Page Structure by Tier
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STARTER (5 Pages)                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ├── Home (Landing Page)                                                     │
+│ ├── Leistungen (All services on one page)                                  │
+│ ├── Über uns                                                                │
+│ ├── Kontakt                                                                 │
+│ └── Impressum + Datenschutz (combined legal)                               │
+│                                                                             │
+│ SEO: 1 main keyword ("Elektriker München")                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PROFESSIONAL (10 Pages) ⭐                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ├── Home                                                                    │
+│ ├── Leistungen (Overview)                                                   │
+│ │   ├── Elektroinstallation                                                │
+│ │   ├── Smart Home                                                          │
+│ │   ├── E-Mobilität                                                         │
+│ │   └── Sicherheitstechnik                                                  │
+│ ├── Über uns                                                                │
+│ ├── Kontakt                                                                 │
+│ ├── Impressum                                                               │
+│ └── Datenschutz                                                             │
+│                                                                             │
+│ SEO: 5 keywords (1 main + 4 service pages)                                  │
+│ Funnels: 4 lead capture funnels                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PREMIUM (20 Pages)                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ├── Home                                                                    │
+│ ├── Leistungen (Overview)                                                   │
+│ │   ├── Elektroinstallation                                                │
+│ │   │   ├── Neuinstallation                                                │
+│ │   │   └── Sanierung                                                       │
+│ │   ├── Smart Home                                                          │
+│ │   │   ├── KNX Systeme                                                     │
+│ │   │   └── Loxone                                                          │
+│ │   ├── E-Mobilität                                                         │
+│ │   │   ├── Wallbox Installation                                           │
+│ │   │   └── Lastmanagement                                                  │
+│ │   └── Sicherheitstechnik                                                  │
+│ │       ├── Alarmanlagen                                                    │
+│ │       └── Videoüberwachung                                                │
+│ ├── Projekte / Referenzen                                                   │
+│ ├── Über uns                                                                │
+│ ├── Kontakt                                                                 │
+│ ├── FAQ                                                                     │
+│ ├── Impressum                                                               │
+│ └── Datenschutz                                                             │
+│                                                                             │
+│ SEO: 12+ keywords (services + sub-services)                                 │
+│ Funnels: Custom funnels per service                                         │
+│ Schema: Service + FAQ markup                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ENTERPRISE (50 Pages) - Full Local SEO Domination                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ├── Home                                                                    │
+│ ├── Leistungen (Overview)                                                   │
+│ │   ├── [All Premium service pages]                                        │
+│ │   └── [Additional sub-services as needed]                                │
+│ ├── Stadtteile / Einzugsgebiet (Local SEO)                                 │
+│ │   ├── Elektriker Schwabing                                               │
+│ │   ├── Elektriker Bogenhausen                                             │
+│ │   ├── Elektriker Sendling                                                │
+│ │   ├── Elektriker Pasing                                                  │
+│ │   └── [10-15 district pages]                                             │
+│ ├── Blog / Ratgeber                                                         │
+│ │   ├── Smart Home Kosten 2024                                             │
+│ │   ├── Wallbox Förderung Bayern                                           │
+│ │   ├── E-Check: Was wird geprüft?                                         │
+│ │   └── [Monthly content updates]                                          │
+│ ├── Projekte / Referenzen                                                   │
+│ │   ├── Projekt: Villa Grünwald                                            │
+│ │   ├── Projekt: Büro Maxvorstadt                                          │
+│ │   └── [Case studies]                                                      │
+│ ├── Karriere (optional)                                                     │
+│ ├── Über uns                                                                │
+│ ├── Kontakt                                                                 │
+│ ├── FAQ                                                                     │
+│ ├── Impressum                                                               │
+│ └── Datenschutz                                                             │
+│                                                                             │
+│ SEO: 30+ keywords (services + districts + long-tail blog)                   │
+│ Local: District pages for Google Maps rankings                              │
+│ Content: Monthly blog posts (2-4/month)                                     │
+│ Schema: LocalBusiness + Service + FAQ + Article + BreadcrumbList           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Demo Site = Enterprise Template
+
+Our demo site (`demo-elektriker`) showcases the full Enterprise structure:
+- All service pages with sub-services
+- District/location pages for local SEO
+- Blog section for content marketing
+- Project showcases
+- Full schema markup implementation
+
+This demonstrates maximum value to prospects and can be scaled down for lower tiers.
 
 ### Why This Works
 
@@ -110,14 +219,14 @@ Traditional agency: "We'll build you a website for €15,000"
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   NEXT.JS 15    │────▶│   TWENTY CRM    │────▶│      N8N        │
-│   (Website)     │     │   (Leads/Data)  │     │  (Automation)   │
+│   NEXT.JS 15    │────▶│   TWENTY CRM    │────▶│    WORKFLOW     │
+│   (Website)     │     │   (Leads/Data)  │     │   (Automation)  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
         │                       │                       │
         ▼                       ▼                       ▼
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   SHADCN/UI     │     │    GRAPHQL      │     │     RESEND      │
-│   (Components)  │     │     (API)       │     │    (Email)      │
+│   SHADCN/UI     │     │    REST API     │     │     RESEND      │
+│   (Components)  │     │                 │     │    (Email)      │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
         │                                               │
         ▼                                               ▼
@@ -125,6 +234,11 @@ Traditional agency: "We'll build you a website for €15,000"
 │   GEMINI AI     │                             │     TWILIO      │
 │   (Images)      │                             │ (WhatsApp/SMS)  │
 └─────────────────┘                             └─────────────────┘
+
+        ┌─────────────────┐
+        │      N8N        │ ← Premium Add-on (complex automations)
+        │  (Visual Flows) │
+        └─────────────────┘
 ```
 
 ### Why These Choices
@@ -134,10 +248,25 @@ Traditional agency: "We'll build you a website for €15,000"
 | **Next.js 15** | Best-in-class performance, SEO, developer experience |
 | **shadcn/ui** | Enterprise-quality components, fully customizable |
 | **Twenty CRM** | Open-source, self-hosted, no per-seat fees |
-| **n8n** | Visual automation, self-hosted, unlimited workflows |
+| **Workflow** | Next.js-native automation, `"use workflow"` directive, no external service |
+| **n8n** | Premium add-on for complex multi-system automations (extra charge) |
 | **Resend** | Modern email API, great deliverability |
 | **Twilio** | Reliable WhatsApp Business API |
 | **Gemini** | High-quality AI images at $0.05-0.10 each |
+
+### Automation Architecture
+
+**Basic Automations (Included - Workflow Library):**
+- Lead confirmation emails
+- Owner notifications
+- Follow-up sequences (24h, 3 days)
+- Lead scoring & classification
+
+**Complex Automations (Premium Add-on - n8n):**
+- Multi-system integrations (accounting, inventory)
+- Custom webhook chains
+- Advanced conditional logic
+- Third-party API orchestration
 
 ### Key Architectural Decisions
 
@@ -145,6 +274,7 @@ Traditional agency: "We'll build you a website for €15,000"
 2. **Config-driven** - Content in TypeScript config files, not a CMS
 3. **Pre-built themes** - 8 professionally designed themes, no color picking
 4. **Demo → Client workflow** - Clone demo repo, run setup script, deploy
+5. **Workflow-first automation** - Basic automations via Next.js Workflow library, n8n only for complex needs
 
 ---
 
@@ -215,9 +345,11 @@ src/
 ├── app/                      # Next.js pages
 │   ├── demo/[industry]/      # Demo landing pages
 │   └── api/                  # API routes (leads, images)
+│       └── funnel-submit/    # Triggers workflow automation
 ├── components/
 │   ├── ui/                   # shadcn/ui components
 │   ├── demo/                 # Demo mode components
+│   ├── funnel/               # Lead capture funnels
 │   └── seo/                  # Schema markup
 ├── config/
 │   ├── clients/              # Client configurations
@@ -225,6 +357,8 @@ src/
 │   ├── themes/               # 8 pre-built themes
 │   ├── business.types.ts     # TypeScript interfaces
 │   └── demo.config.ts        # Demo mode toggle
+├── workflows/                # ⭐ Workflow automations
+│   └── lead-processing.ts    # Main lead workflow (CRM, emails, follow-ups)
 └── lib/
     ├── gemini/               # AI image generation
     └── animations/           # Framer Motion
@@ -401,25 +535,63 @@ Website Form Submit
        │
        ▼
 ┌─────────────────┐
-│   Twenty CRM    │ ← Lead created with source attribution
+│  API Route      │ ← /api/funnel-submit
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│   n8n Webhook   │ ← Triggers automation
+│ Workflow Library│ ← start(processLead, [submission])
+│ "use workflow"  │
 └────────┬────────┘
          │
-    ┌────┴────┐
-    ▼         ▼
-┌───────┐ ┌────────┐
-│ Email │ │WhatsApp│ ← Instant notifications
-└───────┘ └────────┘
-    │
-    ▼
-┌─────────────────┐
-│ Follow-up       │ ← Day 1, 3, 7 sequences
-│ Sequence        │
-└─────────────────┘
+    ┌────┼────────────────┐
+    ▼    ▼                ▼
+┌──────┐ ┌──────────┐ ┌────────┐
+│ CRM  │ │  Email   │ │WhatsApp│
+│Create│ │Confirm   │ │ Notify │
+└──────┘ └──────────┘ └────────┘
+              │
+              ▼
+       ┌─────────────┐
+       │ sleep("24h")│ ← Workflow suspends
+       └──────┬──────┘
+              ▼
+       ┌─────────────┐
+       │ Follow-up   │ ← Check & send if needed
+       └──────┬──────┘
+              ▼
+       ┌─────────────┐
+       │ sleep("3d") │
+       └──────┬──────┘
+              ▼
+       ┌─────────────┐
+       │ 2nd Follow  │
+       └─────────────┘
+```
+
+### Workflow Implementation
+
+Located in `src/workflows/lead-processing.ts`:
+
+```typescript
+export async function processLead(submission: LeadSubmission) {
+  "use workflow";
+
+  // Step 1-3: CRM operations
+  const person = await createPersonInCRM(submission);
+  const opportunity = await createOpportunityInCRM(submission, person);
+  await createNoteInCRM(submission, opportunity.id);
+
+  // Step 4-5: Notifications
+  await sendCustomerConfirmationEmail(submission);
+  await notifyOwner(submission, person, isHotLead);
+
+  // Step 6-7: Automated follow-ups
+  await sleep("24h");
+  await checkAndSendFollowUp(submission, person, opportunity);
+  await sleep("3d");
+  await sendSecondFollowUp(submission, person, opportunity);
+}
 ```
 
 ### Demo Mode

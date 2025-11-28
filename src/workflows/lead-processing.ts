@@ -1,4 +1,13 @@
 import { sleep } from "workflow";
+import {
+  renderLeadConfirmation,
+  renderFollowUp1,
+  renderFollowUp2,
+  renderFollowUp3,
+  renderOwnerNotification,
+  getEmailSender,
+} from "@/emails/render";
+import { brandConfig } from "@/emails/config/brand.config";
 
 // Types
 interface LeadContact {
@@ -81,6 +90,19 @@ function formatLeadNotes(submission: LeadSubmission): string {
   return lines.join("\n");
 }
 
+// Helper: Get Twenty API URL with https
+function getTwentyApiUrl(): string {
+  let url = TWENTY_API_URL;
+  if (url && !url.startsWith("http")) {
+    url = `https://${url}`;
+  }
+  // Ensure it ends with /rest
+  if (url && !url.endsWith("/rest")) {
+    url = url.replace(/\/$/, "") + "/rest";
+  }
+  return url;
+}
+
 /**
  * Main Lead Processing Workflow
  * Triggered when a user submits a funnel on the website
@@ -90,6 +112,7 @@ export async function processLead(submission: LeadSubmission) {
 
   const funnelName = FUNNEL_NAMES[submission.funnelId] || submission.funnelId;
   const isHotLead = submission.scoring.classification === "hot";
+  const { firstName } = parseName(submission.contact.name);
 
   // Step 1: Create Person in Twenty CRM
   const person = await createPersonInCRM(submission);
@@ -100,19 +123,23 @@ export async function processLead(submission: LeadSubmission) {
   // Step 3: Add Note with funnel details
   await createNoteInCRM(submission, opportunity.id);
 
-  // Step 4: Send confirmation email to customer
+  // Step 4: Send confirmation email to customer (React Email)
   await sendCustomerConfirmationEmail(submission, funnelName);
 
   // Step 5: Notify owner (immediate for hot leads)
-  await notifyOwner(submission, person, funnelName, isHotLead);
+  await notifyOwner(submission, funnelName);
 
   // Step 6: Schedule follow-up check after 24 hours
   await sleep("24h");
-  await checkAndSendFollowUp(submission, person, opportunity);
+  await sendFollowUp1(submission, funnelName, person, opportunity);
 
-  // Step 7: Second follow-up after 3 more days
+  // Step 7: Second follow-up after 3 more days (day 4 total)
   await sleep("3d");
-  await sendSecondFollowUp(submission, person, opportunity);
+  await sendFollowUp2(submission, funnelName, person, opportunity);
+
+  // Step 8: Final follow-up after 3 more days (day 7 total)
+  await sleep("3d");
+  await sendFollowUp3(submission, funnelName, person, opportunity);
 
   return {
     success: true,
@@ -128,9 +155,19 @@ export async function processLead(submission: LeadSubmission) {
 async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPerson> {
   "use step";
 
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY) {
+    console.log("Twenty CRM not configured, skipping person creation");
+    return {
+      id: `local_${Date.now()}`,
+      name: parseName(submission.contact.name),
+      emails: { primaryEmail: submission.contact.email },
+    };
+  }
+
   const { firstName, lastName } = parseName(submission.contact.name);
 
-  const response = await fetch(`${TWENTY_API_URL}/people`, {
+  const response = await fetch(`${apiUrl}/people`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${TWENTY_API_KEY}`,
@@ -145,7 +182,14 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create person: ${await response.text()}`);
+    const errorText = await response.text();
+    console.error(`Failed to create person: ${errorText}`);
+    // Return local fallback
+    return {
+      id: `local_${Date.now()}`,
+      name: { firstName, lastName },
+      emails: { primaryEmail: submission.contact.email },
+    };
   }
 
   const data = await response.json();
@@ -162,24 +206,39 @@ async function createOpportunityInCRM(
 ): Promise<TwentyOpportunity> {
   "use step";
 
-  const { lastName } = parseName(submission.contact.name);
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY) {
+    console.log("Twenty CRM not configured, skipping opportunity creation");
+    return {
+      id: `local_opp_${Date.now()}`,
+      name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
+      stage: "NEW",
+    };
+  }
+
   const stage = submission.scoring.classification === "hot" ? "SCREENING" : "NEW";
 
-  const response = await fetch(`${TWENTY_API_URL}/opportunities`, {
+  const response = await fetch(`${apiUrl}/opportunities`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${TWENTY_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      name: `${funnelName} - ${lastName}`,
+      name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
       stage,
       pointOfContactId: person.id,
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create opportunity: ${await response.text()}`);
+    const errorText = await response.text();
+    console.error(`Failed to create opportunity: ${errorText}`);
+    return {
+      id: `local_opp_${Date.now()}`,
+      name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
+      stage: "NEW",
+    };
   }
 
   const data = await response.json();
@@ -192,9 +251,15 @@ async function createOpportunityInCRM(
 async function createNoteInCRM(submission: LeadSubmission, opportunityId: string): Promise<void> {
   "use step";
 
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY) {
+    console.log("Twenty CRM not configured, skipping note creation");
+    return;
+  }
+
   const noteContent = formatLeadNotes(submission);
 
-  await fetch(`${TWENTY_API_URL}/notes`, {
+  await fetch(`${apiUrl}/notes`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${TWENTY_API_KEY}`,
@@ -202,16 +267,17 @@ async function createNoteInCRM(submission: LeadSubmission, opportunityId: string
     },
     body: JSON.stringify({
       body: noteContent,
-      // Note: Twenty may need different field for linking to opportunity
-      // Check Twenty API docs for correct relation field
     }),
   });
 }
 
 /**
- * Step: Send confirmation email to customer
+ * Step: Send confirmation email to customer (React Email)
  */
-async function sendCustomerConfirmationEmail(submission: LeadSubmission, funnelName: string): Promise<void> {
+async function sendCustomerConfirmationEmail(
+  submission: LeadSubmission,
+  funnelName: string
+): Promise<void> {
   "use step";
 
   if (!RESEND_API_KEY) {
@@ -220,53 +286,23 @@ async function sendCustomerConfirmationEmail(submission: LeadSubmission, funnelN
   }
 
   const { firstName } = parseName(submission.contact.name);
+  const sender = getEmailSender();
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-
-  <div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="color: #f97316; margin: 0;">⚡ Müller Elektrotechnik</h1>
-    <p style="color: #666; margin: 5px 0;">Ihr Experte für Smart Home & Elektroinstallation</p>
-  </div>
-
-  <h2 style="color: #333;">Hallo ${firstName}!</h2>
-
-  <p>Vielen Dank für deine Anfrage zum Thema <strong>${funnelName}</strong>!</p>
-
-  <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
-    <h3 style="margin-top: 0; color: #333;">Was passiert jetzt?</h3>
-    <ul style="padding-left: 20px;">
-      <li>✓ Deine Anfrage ist bei uns eingegangen</li>
-      <li>→ Thomas meldet sich innerhalb von 24 Stunden</li>
-      <li>→ Wir besprechen deine Wünsche und Möglichkeiten</li>
-      <li>→ Du erhältst ein unverbindliches Angebot</li>
-    </ul>
-  </div>
-
-  <div style="background: #fff7ed; border-left: 4px solid #f97316; padding: 15px; margin: 20px 0;">
-    <strong>Du möchtest nicht warten?</strong><br>
-    📞 <a href="tel:+4989123456789" style="color: #f97316;">089 1234 5678</a> (Mo-Fr 8-18 Uhr)<br>
-    💬 <a href="https://wa.me/4989123456789" style="color: #f97316;">WhatsApp schreiben</a>
-  </div>
-
-  <p>Bis bald!<br><strong>Thomas Müller</strong><br>Müller Elektrotechnik München</p>
-
-  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-
-  <p style="font-size: 12px; color: #999; text-align: center;">
-    Müller Elektrotechnik GmbH · Musterstraße 123 · 80331 München<br>
-    Diese E-Mail wurde automatisch versendet.
-  </p>
-
-</body>
-</html>
-  `.trim();
+  // Render React Email template (customer-facing - no internal scoring data)
+  const { html, subject } = await renderLeadConfirmation(
+    {
+      firstName,
+      email: submission.contact.email,
+      phone: submission.contact.phone,
+      plz: submission.contact.plz,
+      address: submission.contact.address,
+    },
+    {
+      funnelId: submission.funnelId,
+      funnelName,
+      selectedOptions: submission.data as Record<string, string | string[]>,
+    }
+  );
 
   await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -275,22 +311,21 @@ async function sendCustomerConfirmationEmail(submission: LeadSubmission, funnelN
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Müller Elektrotechnik <elektriker@fabig.website>",
+      from: sender.from,
       to: submission.contact.email,
-      subject: `Deine ${funnelName} Anfrage ✓`,
+      reply_to: sender.replyTo,
+      subject,
       html,
     }),
   });
 }
 
 /**
- * Step: Notify owner about new lead
+ * Step: Notify owner about new lead (React Email)
  */
 async function notifyOwner(
   submission: LeadSubmission,
-  person: TwentyPerson,
-  funnelName: string,
-  isHotLead: boolean
+  funnelName: string
 ): Promise<void> {
   "use step";
 
@@ -299,62 +334,30 @@ async function notifyOwner(
     return;
   }
 
-  const emoji = isHotLead ? "🔥" : "📬";
-  const urgency = isHotLead ? "HOT LEAD - Sofort anrufen!" : "Neuer Lead";
+  const sender = getEmailSender();
+  const crmLink = "https://crm.fabig-suite.de";
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px;">
-
-  <h2>${emoji} ${urgency}</h2>
-
-  <table style="border-collapse: collapse; width: 100%;">
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Name:</strong></td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">${submission.contact.name}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Telefon:</strong></td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">
-        <a href="tel:${submission.contact.phone}">${submission.contact.phone}</a>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>E-Mail:</strong></td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">
-        <a href="mailto:${submission.contact.email}">${submission.contact.email}</a>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>PLZ:</strong></td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">${submission.contact.plz || "-"}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Anfrage:</strong></td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">${funnelName}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Score:</strong></td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">
-        ${submission.scoring.totalScore} (${submission.scoring.classification.toUpperCase()})
-      </td>
-    </tr>
-    <tr>
-      <td style="padding: 8px;"><strong>Tags:</strong></td>
-      <td style="padding: 8px;">${submission.scoring.tags.join(", ") || "-"}</td>
-    </tr>
-  </table>
-
-  <div style="margin-top: 20px;">
-    <a href="https://crm.fabig-suite.de" style="background: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-      Im CRM öffnen
-    </a>
-  </div>
-
-</body>
-</html>
-  `.trim();
+  // Render React Email template
+  const { html, subject } = await renderOwnerNotification(
+    {
+      firstName: submission.contact.name, // Full name for owner
+      email: submission.contact.email,
+      phone: submission.contact.phone,
+      plz: submission.contact.plz,
+      address: submission.contact.address,
+    },
+    {
+      funnelId: submission.funnelId,
+      funnelName,
+      selectedOptions: submission.data as Record<string, string | string[]>,
+    },
+    {
+      score: submission.scoring.totalScore,
+      classification: submission.scoring.classification,
+      tags: submission.scoring.tags,
+    },
+    crmLink
+  );
 
   await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -365,38 +368,204 @@ async function notifyOwner(
     body: JSON.stringify({
       from: "Lead Notification <noreply@fabig.website>",
       to: OWNER_EMAIL,
-      subject: `${emoji} ${isHotLead ? "HOT LEAD" : "Neuer Lead"}: ${submission.contact.name} - ${funnelName}`,
+      subject,
       html,
     }),
   });
 }
 
 /**
- * Step: Check if follow-up needed and send
+ * Step: Send Follow-Up Email #1 (Day 1)
  */
-async function checkAndSendFollowUp(
+async function sendFollowUp1(
   submission: LeadSubmission,
+  funnelName: string,
   person: TwentyPerson,
   opportunity: TwentyOpportunity
 ): Promise<void> {
   "use step";
 
-  // TODO: Check if opportunity is still in NEW stage
-  // If so, send follow-up email to customer and reminder to owner
-  console.log(`Follow-up check for ${person.id} - opportunity ${opportunity.id}`);
+  // TODO: Check CRM if opportunity has moved past NEW stage
+  // If contacted, skip this follow-up
+  const shouldSkip = await checkIfAlreadyContacted(opportunity.id);
+  if (shouldSkip) {
+    console.log(`Skipping follow-up 1 for ${person.id} - already contacted`);
+    return;
+  }
+
+  if (!RESEND_API_KEY) {
+    console.log("Resend not configured, skipping follow-up 1");
+    return;
+  }
+
+  const { firstName } = parseName(submission.contact.name);
+  const sender = getEmailSender();
+
+  const { html, subject } = await renderFollowUp1(
+    {
+      firstName,
+      email: submission.contact.email,
+      phone: submission.contact.phone,
+    },
+    {
+      funnelId: submission.funnelId,
+      funnelName,
+      selectedOptions: submission.data as Record<string, string | string[]>,
+    }
+  );
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: sender.from,
+      to: submission.contact.email,
+      reply_to: sender.replyTo,
+      subject,
+      html,
+    }),
+  });
 }
 
 /**
- * Step: Send second follow-up
+ * Step: Send Follow-Up Email #2 (Day 3)
  */
-async function sendSecondFollowUp(
+async function sendFollowUp2(
   submission: LeadSubmission,
+  funnelName: string,
   person: TwentyPerson,
   opportunity: TwentyOpportunity
 ): Promise<void> {
   "use step";
 
-  // TODO: Check if opportunity is still in NEW/SCREENING stage
-  // If so, send final follow-up
-  console.log(`Second follow-up for ${person.id} - opportunity ${opportunity.id}`);
+  const shouldSkip = await checkIfAlreadyContacted(opportunity.id);
+  if (shouldSkip) {
+    console.log(`Skipping follow-up 2 for ${person.id} - already contacted`);
+    return;
+  }
+
+  if (!RESEND_API_KEY) {
+    console.log("Resend not configured, skipping follow-up 2");
+    return;
+  }
+
+  const { firstName } = parseName(submission.contact.name);
+  const sender = getEmailSender();
+
+  const { html, subject } = await renderFollowUp2(
+    {
+      firstName,
+      email: submission.contact.email,
+      phone: submission.contact.phone,
+    },
+    {
+      funnelId: submission.funnelId,
+      funnelName,
+      selectedOptions: submission.data as Record<string, string | string[]>,
+    }
+  );
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: sender.from,
+      to: submission.contact.email,
+      reply_to: sender.replyTo,
+      subject,
+      html,
+    }),
+  });
+}
+
+/**
+ * Step: Send Follow-Up Email #3 (Day 7 - Final)
+ */
+async function sendFollowUp3(
+  submission: LeadSubmission,
+  funnelName: string,
+  person: TwentyPerson,
+  opportunity: TwentyOpportunity
+): Promise<void> {
+  "use step";
+
+  const shouldSkip = await checkIfAlreadyContacted(opportunity.id);
+  if (shouldSkip) {
+    console.log(`Skipping follow-up 3 for ${person.id} - already contacted`);
+    return;
+  }
+
+  if (!RESEND_API_KEY) {
+    console.log("Resend not configured, skipping follow-up 3");
+    return;
+  }
+
+  const { firstName } = parseName(submission.contact.name);
+  const sender = getEmailSender();
+
+  const { html, subject } = await renderFollowUp3(
+    {
+      firstName,
+      email: submission.contact.email,
+      phone: submission.contact.phone,
+    },
+    {
+      funnelId: submission.funnelId,
+      funnelName,
+      selectedOptions: submission.data as Record<string, string | string[]>,
+    }
+  );
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: sender.from,
+      to: submission.contact.email,
+      reply_to: sender.replyTo,
+      subject,
+      html,
+    }),
+  });
+}
+
+/**
+ * Helper: Check if lead has already been contacted
+ * Checks CRM opportunity stage - if moved past NEW, skip follow-up
+ */
+async function checkIfAlreadyContacted(opportunityId: string): Promise<boolean> {
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
+    return false; // Can't check, assume not contacted
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/opportunities/${opportunityId}`, {
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    const opportunity = data.data || data;
+
+    // If stage is no longer NEW, lead has been contacted
+    const contactedStages = ["SCREENING", "MEETING", "PROPOSAL", "CUSTOMER", "CLOSED_WON", "CLOSED_LOST"];
+    return contactedStages.includes(opportunity.stage);
+  } catch {
+    return false;
+  }
 }
