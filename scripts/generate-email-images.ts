@@ -38,8 +38,8 @@ if (fs.existsSync(dotenvPath)) {
 const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY
 const CEO_REFERENCE_URL = process.env.CEO_REFERENCE_IMAGE_URL
 
-// Gemini API config
-const GEMINI_MODEL = 'gemini-2.5-flash-image'
+// Gemini API config - using gemini-3-pro-image-preview as confirmed in docs
+const GEMINI_MODEL = 'gemini-3-pro-image-preview'
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 // Output directory
