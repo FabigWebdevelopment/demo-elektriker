@@ -212,11 +212,12 @@ async function createOpportunityInCRM(
     return {
       id: `local_opp_${Date.now()}`,
       name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
-      stage: "NEW",
+      stage: "NEUE_ANFRAGE",
     };
   }
 
-  const stage = submission.scoring.classification === "hot" ? "SCREENING" : "NEW";
+  // Stage values matching Twenty CRM German configuration
+const stage = submission.scoring.classification === "hot" ? "IN_BEARBEITUNG" : "NEUE_ANFRAGE";
 
   const response = await fetch(`${apiUrl}/opportunities`, {
     method: "POST",
@@ -237,7 +238,7 @@ async function createOpportunityInCRM(
     return {
       id: `local_opp_${Date.now()}`,
       name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
-      stage: "NEW",
+      stage: "NEUE_ANFRAGE",
     };
   }
 
@@ -259,6 +260,8 @@ async function createNoteInCRM(submission: LeadSubmission, opportunityId: string
 
   const noteContent = formatLeadNotes(submission);
 
+  // Note: Twenty CRM uses bodyV2 (RICH_TEXT_V2) which requires
+  // an object with markdown and blocknote properties
   await fetch(`${apiUrl}/notes`, {
     method: "POST",
     headers: {
@@ -266,7 +269,11 @@ async function createNoteInCRM(submission: LeadSubmission, opportunityId: string
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      body: noteContent,
+      title: `Funnel: ${submission.funnelId}`,
+      bodyV2: {
+        markdown: noteContent,
+        blocknote: null,  // Will be auto-converted from markdown
+      },
     }),
   });
 }
@@ -562,8 +569,9 @@ async function checkIfAlreadyContacted(opportunityId: string): Promise<boolean> 
     const data = await response.json();
     const opportunity = data.data || data;
 
-    // If stage is no longer NEW, lead has been contacted
-    const contactedStages = ["SCREENING", "MEETING", "PROPOSAL", "CUSTOMER", "CLOSED_WON", "CLOSED_LOST"];
+    // If stage is no longer NEUE_ANFRAGE, lead has been contacted
+    // German stage values from Twenty CRM configuration
+    const contactedStages = ["IN_BEARBEITUNG", "TERMIN_VEREINBART", "ANGEBOT_GESENDET", "KUNDE_GEWONNEN"];
     return contactedStages.includes(opportunity.stage);
   } catch {
     return false;

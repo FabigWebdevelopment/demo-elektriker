@@ -10,6 +10,10 @@
 
 import { emailThemeColors } from './theme-colors'
 
+// Base URL for email images - must be publicly accessible
+// In production, set NEXT_PUBLIC_SITE_URL to your deployed domain
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://demo-elektriker.vercel.app'
+
 export interface BrandConfig {
   // Company Info
   company: {
@@ -133,18 +137,20 @@ export const brandConfig: BrandConfig = {
   },
 
   images: {
-    logo: 'https://mueller-elektro.de/images/logo.png',
+    logo: `${SITE_URL}/demo-electrician/electrician-logo.png`,
     logoWidth: 180,
-    ownerPhoto: 'https://mueller-elektro.de/images/team/thomas-mueller.jpg',
-    emailBanner: 'https://mueller-elektro.de/images/email/banner.jpg',
+    // Owner photo - generated using CEO reference image
+    ownerPhoto: `${SITE_URL}/images/email/owner-photo.png`,
+    emailBanner: `${SITE_URL}/images/email/banner.jpg`,
     // Reference image for AI generation - set via CEO_REFERENCE_IMAGE_URL env var
     ceoReferenceImage: process.env.CEO_REFERENCE_IMAGE_URL || '',
     // Generated images featuring the CEO in different scenarios
-    confirmationImage: 'https://mueller-elektro.de/images/email/confirmation-electrician.jpg',
-    followUp1Image: 'https://mueller-elektro.de/images/email/followup-checking.jpg',
-    followUp2Image: 'https://mueller-elektro.de/images/email/followup-working.jpg',
-    followUp3Image: 'https://mueller-elektro.de/images/email/followup-complete.jpg',
-    hotLeadImage: 'https://mueller-elektro.de/images/email/hot-lead-urgent.jpg',
+    // These must exist in public/images/email/
+    confirmationImage: `${SITE_URL}/images/email/confirmation-electrician.png`,
+    followUp1Image: `${SITE_URL}/images/email/confirmation-electrician.png`,
+    followUp2Image: `${SITE_URL}/images/email/confirmation-electrician.png`,
+    followUp3Image: `${SITE_URL}/images/email/confirmation-electrician.png`,
+    hotLeadImage: `${SITE_URL}/images/email/confirmation-electrician.png`,
   },
 
   social: {

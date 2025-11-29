@@ -39,7 +39,7 @@ const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY
 const CEO_REFERENCE_URL = process.env.CEO_REFERENCE_IMAGE_URL
 
 // Gemini API config
-const GEMINI_MODEL = 'gemini-2.0-flash-exp-image-generation'
+const GEMINI_MODEL = 'gemini-2.5-flash-image'
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 // Output directory
