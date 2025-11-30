@@ -113,9 +113,13 @@ const CLASSIFICATION_PROBABILITY: Record<string, number> = {
   nurture: 10,
 };
 
-// Classification to CRM stage mapping (matches Twenty CRM German setup)
+// Classification to CRM stage mapping
+// Note: Twenty CRM default stages may vary by workspace setup
+// Using "NEW" as safe default for all classifications
+// After workspace is fully configured with TWENTY_CRM_GERMAN_SETUP,
+// you can enable SCREENING, MEETING, PROPOSAL, CUSTOMER stages
 const CLASSIFICATION_STAGE: Record<string, string> = {
-  hot: "SCREENING",      // In Bearbeitung
+  hot: "NEW",            // Hot leads still start as NEW, task urgency handles priority
   warm: "NEW",           // Neue Anfrage
   potential: "NEW",      // Neue Anfrage
   nurture: "NEW",        // Neue Anfrage
@@ -193,6 +197,44 @@ function getEstimatedAmount(funnelId: string, score: number): number {
 function getPreferredContact(phone?: string): string {
   // If phone provided, assume they prefer phone contact
   return phone ? "PHONE" : "EMAIL";
+}
+
+/**
+ * Format German phone number to international E.164 format
+ * Twenty CRM requires international format: +49...
+ *
+ * Examples:
+ * - "015735387471" → "+4915735387471"
+ * - "0157 3538 7471" → "+4915735387471"
+ * - "+49 157 3538 7471" → "+4915735387471"
+ * - "089 1234 5678" → "+49891234567"
+ */
+function formatPhoneInternational(phone: string): string {
+  // Remove all non-digit characters except leading +
+  let cleaned = phone.replace(/[^\d+]/g, "");
+
+  // Already has country code
+  if (cleaned.startsWith("+49")) {
+    return cleaned;
+  }
+
+  // Already has country code without +
+  if (cleaned.startsWith("49") && cleaned.length > 10) {
+    return "+" + cleaned;
+  }
+
+  // German format starting with 0
+  if (cleaned.startsWith("0")) {
+    return "+49" + cleaned.slice(1);
+  }
+
+  // Just digits without country code (assume German)
+  if (/^\d{8,15}$/.test(cleaned)) {
+    return "+49" + cleaned;
+  }
+
+  // Return as-is if can't parse (let CRM handle validation)
+  return phone;
 }
 
 function formatLeadNotes(submission: LeadSubmission, funnelName: string): string {
@@ -390,15 +432,22 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
 
   const { firstName, lastName } = parseName(submission.contact.name);
 
+  // Format phone to international E.164 format (Twenty CRM requirement)
+  const formattedPhone = submission.contact.phone
+    ? formatPhoneInternational(submission.contact.phone)
+    : "";
+
   const personData = {
     name: { firstName, lastName },
     emails: { primaryEmail: submission.contact.email },
-    phones: { primaryPhoneNumber: submission.contact.phone },
+    phones: { primaryPhoneNumber: formattedPhone },
     city: submission.contact.plz || "",
     // Custom fields
     gdprConsent: submission.meta.gdprConsent,
     preferredContact: getPreferredContact(submission.contact.phone),
   };
+
+  console.log(`Creating person with phone: ${submission.contact.phone} → ${formattedPhone}`);
 
   const response = await fetch(`${apiUrl}/people`, {
     method: "POST",
