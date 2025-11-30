@@ -265,20 +265,23 @@ export const elektroFunnelConfig: FunnelConfig = {
           options: [
             {
               id: 'standard',
-              icon: '⭐',
+              icon: '🔧',
               label: 'Standard',
+              subtext: 'Funktional & zuverlässig',
               score: 5,
             },
             {
               id: 'komfort',
-              icon: '⭐⭐',
+              icon: '✨',
               label: 'Komfort',
+              subtext: 'Mehr Steckdosen, bessere Schalter',
               score: 15,
             },
             {
               id: 'premium',
-              icon: '⭐⭐⭐',
+              icon: '💎',
               label: 'Premium',
+              subtext: 'Hochwertige Materialien, Smart-Ready',
               score: 30,
             },
           ],
