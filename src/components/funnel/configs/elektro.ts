@@ -217,12 +217,17 @@ export const elektroFunnelConfig: FunnelConfig = {
     {
       id: 'building-details',
       type: 'optional-qualification',
-      title: 'Noch 2 Fragen für ein präziseres Angebot',
+      title: 'Noch ein paar Details für ein präziseres Angebot',
       skipText: 'Überspringen und absenden',
       questions: [
         {
           fieldName: 'buildingAge',
           question: 'Wann wurde das Gebäude gebaut?',
+          // Only show for existing buildings, not for Neubau (new construction)
+          showIf: {
+            field: 'projectType',
+            notIn: ['neubau'],
+          },
           options: [
             {
               id: 'pre-1970',

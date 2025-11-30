@@ -63,10 +63,24 @@ export interface TwoQuestionsStep extends FunnelStepBase {
   questions: [SingleChoiceQuestion, SingleChoiceQuestion]
 }
 
+/**
+ * Condition for showing/hiding questions based on previous answers
+ */
+export interface ShowIfCondition {
+  /** Field name to check */
+  field: string
+  /** Show if field value is NOT one of these values (used for exclusions) */
+  notIn?: string[]
+  /** Show if field value IS one of these values (used for inclusions) */
+  in?: string[]
+}
+
 export interface SingleChoiceQuestion {
   fieldName: string
   question: string
   options: FunnelOption[]
+  /** Conditional visibility - question only shows if condition is met */
+  showIf?: ShowIfCondition
 }
 
 export interface OptionalQualificationStep extends FunnelStepBase {

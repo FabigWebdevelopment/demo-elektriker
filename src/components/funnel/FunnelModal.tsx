@@ -20,6 +20,8 @@ import {
   TwoQuestionsStep,
   OptionalQualificationStep,
   ContactStep,
+  SingleChoiceQuestion,
+  ShowIfCondition,
 } from './types'
 import {
   Check,
@@ -47,6 +49,34 @@ interface ScoreEntry {
   fieldName: string
   score: number
   tags: string[]
+}
+
+/**
+ * Check if a question should be shown based on its showIf condition
+ */
+function shouldShowQuestion(
+  question: SingleChoiceQuestion,
+  data: FunnelData
+): boolean {
+  if (!question.showIf) return true
+
+  const { field, notIn, in: includedIn } = question.showIf
+  const fieldValue = data[field] as string | undefined
+
+  // If field hasn't been answered yet, show the question by default
+  if (!fieldValue) return true
+
+  // Check "notIn" condition - hide if value IS in the excluded list
+  if (notIn && notIn.includes(fieldValue)) {
+    return false
+  }
+
+  // Check "in" condition - hide if value is NOT in the included list
+  if (includedIn && !includedIn.includes(fieldValue)) {
+    return false
+  }
+
+  return true
 }
 
 export function FunnelModal({
@@ -443,9 +473,13 @@ export function FunnelModal({
 
       case 'two-questions': {
         const twoQStep = step as TwoQuestionsStep
+        // Filter questions based on showIf conditions
+        const visibleQuestions = twoQStep.questions.filter((q) =>
+          shouldShowQuestion(q, data)
+        )
         return (
           <div className="space-y-8">
-            {twoQStep.questions.map((question, qIndex) => {
+            {visibleQuestions.map((question, qIndex) => {
               const isAnswered = !!data[question.fieldName]
               return (
                 <div key={question.fieldName} className="space-y-3">
@@ -481,9 +515,13 @@ export function FunnelModal({
 
       case 'optional-qualification': {
         const optionalStep = step as OptionalQualificationStep
+        // Filter questions based on showIf conditions
+        const visibleQuestions = optionalStep.questions.filter((q) =>
+          shouldShowQuestion(q, data)
+        )
         return (
           <div className="space-y-8">
-            {optionalStep.questions.map((question, qIndex) => {
+            {visibleQuestions.map((question, qIndex) => {
               const isAnswered = !!data[question.fieldName]
               return (
                 <div key={question.fieldName} className="space-y-3">
