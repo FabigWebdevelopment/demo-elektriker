@@ -281,28 +281,69 @@ export async function processLead(submission: LeadSubmission) {
   const funnelConfig = FUNNEL_CONFIG[submission.funnelId];
   const funnelName = funnelConfig?.name || submission.funnelId;
   const { classification, totalScore } = submission.scoring;
-  const { firstName, lastName } = parseName(submission.contact.name);
 
-  // Step 1: Create Person in CRM
-  const person = await createPersonInCRM(submission);
+  // Track CRM results (may fail, but emails should still be sent)
+  let person: TwentyPerson | null = null;
+  let opportunity: TwentyOpportunity | null = null;
+  let crmSuccess = false;
 
-  // Step 2: Create Opportunity with full data
-  const opportunity = await createOpportunityInCRM(submission, person, funnelName);
+  // ========================================
+  // PHASE 1: CRM Operations (can fail gracefully)
+  // ========================================
+  try {
+    // Step 1: Create Person in CRM
+    person = await createPersonInCRM(submission);
+    console.log(`✅ Person created: ${person.id}`);
 
-  // Step 3: Create Note linked to Opportunity
-  await createNoteInCRM(submission, opportunity.id, funnelName);
+    // Step 2: Create Opportunity with full data
+    opportunity = await createOpportunityInCRM(submission, person, funnelName);
+    console.log(`✅ Opportunity created: ${opportunity.id}`);
 
-  // Step 4: Create Task for owner
-  await createTaskInCRM(submission, opportunity.id, funnelName);
+    // Step 3: Create Note linked to Opportunity
+    await createNoteInCRM(submission, opportunity.id, funnelName);
 
-  // Step 5: Send customer confirmation email
+    // Step 4: Create Task for owner
+    await createTaskInCRM(submission, opportunity.id, funnelName);
+
+    crmSuccess = true;
+    console.log(`✅ CRM operations completed successfully`);
+  } catch (crmError) {
+    console.error(`❌ CRM operations failed:`, crmError);
+    console.error(`Continuing with email notifications...`);
+    // Create fallback person for email purposes
+    if (!person) {
+      const { firstName, lastName } = parseName(submission.contact.name);
+      person = {
+        id: `local_${Date.now()}`,
+        name: { firstName, lastName },
+        emails: { primaryEmail: submission.contact.email },
+      };
+    }
+    if (!opportunity) {
+      opportunity = {
+        id: `local_opp_${Date.now()}`,
+        name: `${funnelName} - ${submission.contact.name}`,
+        stage: "NEW",
+      };
+    }
+  }
+
+  // ========================================
+  // PHASE 2: Email Notifications (must succeed)
+  // ========================================
+
+  // Step 5: Send customer confirmation email (ALWAYS)
   await sendCustomerConfirmationEmail(submission, funnelName);
 
-  // Step 6: Send owner notification with CRM link
-  const opportunityLink = `${CRM_BASE_URL}/object/opportunity/${opportunity.id}`;
+  // Step 6: Send owner notification with CRM link (if available)
+  const opportunityLink = crmSuccess && opportunity
+    ? `${CRM_BASE_URL}/object/opportunity/${opportunity.id}`
+    : undefined;
   await notifyOwner(submission, funnelName, opportunityLink);
 
-  // Step 7: Automated follow-up sequence
+  // ========================================
+  // PHASE 3: Follow-up Sequence
+  // ========================================
   await sleep("24h");
   await sendFollowUp1(submission, funnelName, person, opportunity);
 
@@ -314,8 +355,9 @@ export async function processLead(submission: LeadSubmission) {
 
   return {
     success: true,
-    personId: person.id,
-    opportunityId: opportunity.id,
+    crmSuccess,
+    personId: person?.id,
+    opportunityId: opportunity?.id,
     classification,
     score: totalScore,
   };
@@ -417,26 +459,22 @@ async function createOpportunityInCRM(
   const { classification, totalScore } = submission.scoring;
   const funnelConfig = FUNNEL_CONFIG[submission.funnelId];
 
+  // Twenty CRM REST API expects simple number for amount, NOT nested object
+  const estimatedAmount = getEstimatedAmount(submission.funnelId, totalScore);
+
   const opportunityData = {
     // Basic info
     name: `${funnelName} - ${personName}`,
     stage: CLASSIFICATION_STAGE[classification] || "NEW",
     pointOfContactId: person.id,
 
-    // Financial
-    amount: {
-      amountMicros: getEstimatedAmount(submission.funnelId, totalScore) * 1000000,
-      currencyCode: "EUR",
-    },
+    // Financial - Simple number format for REST API
+    amount: estimatedAmount,
     probability: CLASSIFICATION_PROBABILITY[classification] || 20,
     closeDate: getExpectedCloseDate(classification),
-
-    // Custom fields (from setup-german-workspace.ts)
-    leadScore: totalScore,
-    leadClassification: classification.toUpperCase(),
-    funnelSource: funnelConfig?.source || "OTHER",
-    urgency: CLASSIFICATION_URGENCY[classification] || "PLANNED",
   };
+
+  console.log(`Creating opportunity with data:`, JSON.stringify(opportunityData, null, 2));
 
   const response = await fetch(`${apiUrl}/opportunities`, {
     method: "POST",
@@ -447,18 +485,26 @@ async function createOpportunityInCRM(
     body: JSON.stringify(opportunityData),
   });
 
+  const responseText = await response.text();
+  console.log(`Opportunity API response (${response.status}):`, responseText);
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Failed to create opportunity: ${errorText}`);
-    return {
-      id: `local_opp_${Date.now()}`,
-      name: `${funnelName} - ${personName}`,
-      stage: "NEW",
-    };
+    console.error(`❌ Failed to create opportunity: Status ${response.status}`);
+    console.error(`Response: ${responseText}`);
+    // Throw error so workflow knows CRM failed - emails will still be sent separately
+    throw new Error(`Opportunity creation failed (${response.status}): ${responseText.slice(0, 200)}`);
   }
 
-  const data = await response.json();
-  return data.data || data;
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON response from CRM: ${responseText.slice(0, 200)}`);
+  }
+
+  const opportunity = data.data || data;
+  console.log(`✅ Opportunity created: ${opportunity.id}`);
+  return opportunity;
 }
 
 /**
@@ -702,7 +748,7 @@ async function sendCustomerConfirmationEmail(
 async function notifyOwner(
   submission: LeadSubmission,
   funnelName: string,
-  opportunityLink: string
+  opportunityLink?: string
 ): Promise<void> {
   "use step";
 
