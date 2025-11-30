@@ -121,7 +121,8 @@ export const LeadConfirmation = ({
                       href={`tel:${contact.phone}`}
                       style={{ backgroundColor: primaryColor, color: colors.primaryForeground, fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}
                     >
-                      📞 Anrufen
+                      <img src={images.phoneIcon} alt="" width="14" height="14" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                      Anrufen
                     </a>
                   </td>
                   <td>
@@ -129,7 +130,8 @@ export const LeadConfirmation = ({
                       href={`https://wa.me/${contact.whatsapp}`}
                       style={{ backgroundColor: '#25D366', color: '#ffffff', fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}
                     >
-                      💬 WhatsApp
+                      <img src={images.whatsappIcon} alt="" width="14" height="14" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                      WhatsApp
                     </a>
                   </td>
                 </tr>
