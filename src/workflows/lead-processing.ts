@@ -7,9 +7,11 @@ import {
   renderOwnerNotification,
   getEmailSender,
 } from "@/emails/render";
-import { brandConfig } from "@/emails/config/brand.config";
 
-// Types
+// =============================================================================
+// TYPES
+// =============================================================================
+
 interface LeadContact {
   name: string;
   email: string;
@@ -33,6 +35,8 @@ interface LeadSubmission {
     source: string;
     createdAt: string;
     gdprConsent: boolean;
+    userAgent?: string;
+    referrer?: string;
   };
 }
 
@@ -48,21 +52,94 @@ interface TwentyOpportunity {
   stage: string;
 }
 
-// Environment variables
+interface TwentyTask {
+  id: string;
+  title: string;
+  status: string;
+}
+
+interface TwentyNote {
+  id: string;
+  title: string;
+}
+
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
+
 const TWENTY_API_URL = process.env.TWENTY_CRM_API_URL || "";
 const TWENTY_API_KEY = process.env.TWENTY_API_KEY || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const OWNER_EMAIL = process.env.NOTIFICATION_EMAIL || "thomas@fabig.website";
+const CRM_BASE_URL = process.env.TWENTY_CRM_BASE_URL || "https://crm.fabig-suite.de";
 
-// Funnel display names
-const FUNNEL_NAMES: Record<string, string> = {
-  "smart-home-beratung": "Smart Home Beratung",
-  "elektro-anfrage": "Elektroinstallation",
-  "sicherheit-beratung": "Sicherheitstechnik",
-  "wallbox-anfrage": "Wallbox Installation",
+// Funnel display names and configuration
+const FUNNEL_CONFIG: Record<string, {
+  name: string;
+  source: string;
+  estimatedValue: { min: number; avg: number; max: number };
+}> = {
+  "smart-home-beratung": {
+    name: "Smart Home Beratung",
+    source: "SMART_HOME",
+    estimatedValue: { min: 5000, avg: 15000, max: 50000 },
+  },
+  "elektro-anfrage": {
+    name: "Elektroinstallation",
+    source: "ELEKTRO",
+    estimatedValue: { min: 500, avg: 3000, max: 15000 },
+  },
+  "sicherheit-beratung": {
+    name: "Sicherheitstechnik",
+    source: "SICHERHEIT",
+    estimatedValue: { min: 2000, avg: 8000, max: 25000 },
+  },
+  "wallbox-anfrage": {
+    name: "Wallbox Installation",
+    source: "WALLBOX",
+    estimatedValue: { min: 1500, avg: 3500, max: 8000 },
+  },
 };
 
-// Helper: Parse name
+// Classification to probability mapping
+const CLASSIFICATION_PROBABILITY: Record<string, number> = {
+  hot: 70,
+  warm: 40,
+  potential: 20,
+  nurture: 10,
+};
+
+// Classification to CRM stage mapping (matches Twenty CRM German setup)
+const CLASSIFICATION_STAGE: Record<string, string> = {
+  hot: "SCREENING",      // In Bearbeitung
+  warm: "NEW",           // Neue Anfrage
+  potential: "NEW",      // Neue Anfrage
+  nurture: "NEW",        // Neue Anfrage
+};
+
+// Classification to urgency mapping (custom field)
+const CLASSIFICATION_URGENCY: Record<string, string> = {
+  hot: "URGENT",
+  warm: "SOON",
+  potential: "PLANNED",
+  nurture: "FLEXIBLE",
+};
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+function getTwentyApiUrl(): string {
+  let url = TWENTY_API_URL;
+  if (url && !url.startsWith("http")) {
+    url = `https://${url}`;
+  }
+  if (url && !url.endsWith("/rest")) {
+    url = url.replace(/\/$/, "") + "/rest";
+  }
+  return url;
+}
+
 function parseName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(" ");
   if (parts.length === 1) {
@@ -71,73 +148,163 @@ function parseName(fullName: string): { firstName: string; lastName: string } {
   return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
 }
 
-// Helper: Format lead notes
-function formatLeadNotes(submission: LeadSubmission): string {
+function addDays(date: Date, days: number): string {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result.toISOString();
+}
+
+function getExpectedCloseDate(classification: string): string {
+  const today = new Date();
+  switch (classification) {
+    case "hot": return addDays(today, 14);      // 2 weeks
+    case "warm": return addDays(today, 30);     // 1 month
+    case "potential": return addDays(today, 60); // 2 months
+    default: return addDays(today, 90);          // 3 months
+  }
+}
+
+function getTaskDueDate(classification: string): string {
+  const now = new Date();
+  switch (classification) {
+    case "hot": return addDays(now, 0);   // Same day
+    case "warm": return addDays(now, 1);  // Next day
+    case "potential": return addDays(now, 3); // Within 3 days
+    default: return addDays(now, 7);      // Within a week
+  }
+}
+
+function getEstimatedAmount(funnelId: string, score: number): number {
+  const config = FUNNEL_CONFIG[funnelId];
+  if (!config) return 2000; // Default fallback
+
+  const { min, avg, max } = config.estimatedValue;
+  // Higher score = higher estimated value
+  if (score >= 80) return max;
+  if (score >= 60) return avg;
+  if (score >= 40) return (min + avg) / 2;
+  return min;
+}
+
+function getPreferredContact(phone?: string): string {
+  // If phone provided, assume they prefer phone contact
+  return phone ? "PHONE" : "EMAIL";
+}
+
+function formatLeadNotes(submission: LeadSubmission, funnelName: string): string {
   const lines: string[] = [
-    `📊 Lead Score: ${submission.scoring.totalScore} (${submission.scoring.classification.toUpperCase()})`,
-    `🏷️ Tags: ${submission.scoring.tags.join(", ")}`,
-    "",
-    "📋 Funnel-Daten:",
+    `# Lead Details`,
+    ``,
+    `## Scoring`,
+    `- **Score:** ${submission.scoring.totalScore}/100`,
+    `- **Klassifizierung:** ${submission.scoring.classification.toUpperCase()}`,
+    `- **Tags:** ${submission.scoring.tags.join(", ") || "keine"}`,
+    ``,
+    `## Funnel-Daten`,
+    `- **Funnel:** ${funnelName}`,
+    `- **Quelle:** ${submission.meta.source}`,
+    `- **Erstellt:** ${submission.meta.createdAt}`,
+    ``,
+    `## Antworten`,
   ];
 
   for (const [key, value] of Object.entries(submission.data)) {
     if (["name", "email", "phone", "plz", "address"].includes(key)) continue;
-    const formattedKey = key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
-    lines.push(`• ${formattedKey}: ${Array.isArray(value) ? value.join(", ") : value}`);
+    const formattedKey = key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (s) => s.toUpperCase());
+    const formattedValue = Array.isArray(value) ? value.join(", ") : String(value);
+    lines.push(`- **${formattedKey}:** ${formattedValue}`);
   }
 
-  lines.push("", `📍 Quelle: ${submission.meta.source}`, `📅 Erstellt: ${submission.meta.createdAt}`);
+  lines.push(
+    ``,
+    `## Kontakt`,
+    `- **Name:** ${submission.contact.name}`,
+    `- **E-Mail:** ${submission.contact.email}`,
+    `- **Telefon:** ${submission.contact.phone}`,
+  );
+
+  if (submission.contact.plz) {
+    lines.push(`- **PLZ:** ${submission.contact.plz}`);
+  }
+  if (submission.contact.address) {
+    lines.push(`- **Adresse:** ${submission.contact.address}`);
+  }
+
+  lines.push(
+    ``,
+    `## Meta`,
+    `- **DSGVO-Einwilligung:** ${submission.meta.gdprConsent ? "Ja" : "Nein"}`,
+  );
+
+  if (submission.meta.referrer) {
+    lines.push(`- **Referrer:** ${submission.meta.referrer}`);
+  }
+
   return lines.join("\n");
 }
 
-// Helper: Get Twenty API URL with https
-function getTwentyApiUrl(): string {
-  let url = TWENTY_API_URL;
-  if (url && !url.startsWith("http")) {
-    url = `https://${url}`;
-  }
-  // Ensure it ends with /rest
-  if (url && !url.endsWith("/rest")) {
-    url = url.replace(/\/$/, "") + "/rest";
-  }
-  return url;
+function getClassificationEmoji(classification: string): string {
+  const emojis: Record<string, string> = {
+    hot: "🔥",
+    warm: "🌡️",
+    potential: "📊",
+    nurture: "🌱",
+  };
+  return emojis[classification] || "📋";
 }
 
+// =============================================================================
+// MAIN WORKFLOW
+// =============================================================================
+
 /**
- * Main Lead Processing Workflow
- * Triggered when a user submits a funnel on the website
+ * Enterprise Lead Processing Workflow
+ *
+ * Complete automation for local business lead management:
+ * 1. Create Person in CRM with all contact data + custom fields
+ * 2. Create Opportunity with scoring, estimates, and timeline
+ * 3. Create Note with full funnel details linked to Opportunity
+ * 4. Create Task for owner with priority-based due date
+ * 5. Send customer confirmation email
+ * 6. Send owner notification with CRM deep link
+ * 7. Automated follow-up sequence (Day 1, 4, 7)
  */
 export async function processLead(submission: LeadSubmission) {
   "use workflow";
 
-  const funnelName = FUNNEL_NAMES[submission.funnelId] || submission.funnelId;
-  const isHotLead = submission.scoring.classification === "hot";
-  const { firstName } = parseName(submission.contact.name);
+  const funnelConfig = FUNNEL_CONFIG[submission.funnelId];
+  const funnelName = funnelConfig?.name || submission.funnelId;
+  const { classification, totalScore } = submission.scoring;
+  const { firstName, lastName } = parseName(submission.contact.name);
 
-  // Step 1: Create Person in Twenty CRM
+  // Step 1: Create Person in CRM
   const person = await createPersonInCRM(submission);
 
-  // Step 2: Create Opportunity in Twenty CRM
+  // Step 2: Create Opportunity with full data
   const opportunity = await createOpportunityInCRM(submission, person, funnelName);
 
-  // Step 3: Add Note with funnel details
-  await createNoteInCRM(submission, opportunity.id);
+  // Step 3: Create Note linked to Opportunity
+  await createNoteInCRM(submission, opportunity.id, funnelName);
 
-  // Step 4: Send confirmation email to customer (React Email)
+  // Step 4: Create Task for owner
+  await createTaskInCRM(submission, opportunity.id, funnelName);
+
+  // Step 5: Send customer confirmation email
   await sendCustomerConfirmationEmail(submission, funnelName);
 
-  // Step 5: Notify owner (immediate for hot leads)
-  await notifyOwner(submission, funnelName);
+  // Step 6: Send owner notification with CRM link
+  const opportunityLink = `${CRM_BASE_URL}/object/opportunity/${opportunity.id}`;
+  await notifyOwner(submission, funnelName, opportunityLink);
 
-  // Step 6: Schedule follow-up check after 24 hours
+  // Step 7: Automated follow-up sequence
   await sleep("24h");
   await sendFollowUp1(submission, funnelName, person, opportunity);
 
-  // Step 7: Second follow-up after 3 more days (day 4 total)
   await sleep("3d");
   await sendFollowUp2(submission, funnelName, person, opportunity);
 
-  // Step 8: Final follow-up after 3 more days (day 7 total)
   await sleep("3d");
   await sendFollowUp3(submission, funnelName, person, opportunity);
 
@@ -145,12 +312,22 @@ export async function processLead(submission: LeadSubmission) {
     success: true,
     personId: person.id,
     opportunityId: opportunity.id,
-    classification: submission.scoring.classification,
+    classification,
+    score: totalScore,
   };
 }
 
+// =============================================================================
+// CRM STEPS
+// =============================================================================
+
 /**
- * Step: Create Person in Twenty CRM
+ * Create Person in Twenty CRM
+ *
+ * Includes:
+ * - Full contact details (name, email, phone, city/PLZ)
+ * - GDPR consent flag
+ * - Preferred contact method
  */
 async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPerson> {
   "use step";
@@ -167,24 +344,28 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
 
   const { firstName, lastName } = parseName(submission.contact.name);
 
+  const personData = {
+    name: { firstName, lastName },
+    emails: { primaryEmail: submission.contact.email },
+    phones: { primaryPhoneNumber: submission.contact.phone },
+    city: submission.contact.plz || "",
+    // Custom fields
+    gdprConsent: submission.meta.gdprConsent,
+    preferredContact: getPreferredContact(submission.contact.phone),
+  };
+
   const response = await fetch(`${apiUrl}/people`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${TWENTY_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      name: { firstName, lastName },
-      emails: { primaryEmail: submission.contact.email },
-      phones: { primaryPhoneNumber: submission.contact.phone },
-      city: submission.contact.plz || "",
-    }),
+    body: JSON.stringify(personData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`Failed to create person: ${errorText}`);
-    // Return local fallback
     return {
       id: `local_${Date.now()}`,
       name: { firstName, lastName },
@@ -197,7 +378,17 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
 }
 
 /**
- * Step: Create Opportunity in Twenty CRM
+ * Create Opportunity in Twenty CRM
+ *
+ * Includes:
+ * - Link to Person (pointOfContactId)
+ * - Lead score and classification
+ * - Funnel source
+ * - Estimated value (based on service type + score)
+ * - Expected close date
+ * - Probability (based on classification)
+ * - Urgency level
+ * - Initial stage (based on classification)
  */
 async function createOpportunityInCRM(
   submission: LeadSubmission,
@@ -212,12 +403,33 @@ async function createOpportunityInCRM(
     return {
       id: `local_opp_${Date.now()}`,
       name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
-      stage: "NEUE_ANFRAGE",
+      stage: "NEW",
     };
   }
 
-  // Stage values matching Twenty CRM German configuration
-const stage = submission.scoring.classification === "hot" ? "IN_BEARBEITUNG" : "NEUE_ANFRAGE";
+  const { classification, totalScore } = submission.scoring;
+  const funnelConfig = FUNNEL_CONFIG[submission.funnelId];
+
+  const opportunityData = {
+    // Basic info
+    name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
+    stage: CLASSIFICATION_STAGE[classification] || "NEW",
+    pointOfContactId: person.id,
+
+    // Financial
+    amount: {
+      amountMicros: getEstimatedAmount(submission.funnelId, totalScore) * 1000000,
+      currencyCode: "EUR",
+    },
+    probability: CLASSIFICATION_PROBABILITY[classification] || 20,
+    closeDate: getExpectedCloseDate(classification),
+
+    // Custom fields (from setup-german-workspace.ts)
+    leadScore: totalScore,
+    leadClassification: classification.toUpperCase(),
+    funnelSource: funnelConfig?.source || "OTHER",
+    urgency: CLASSIFICATION_URGENCY[classification] || "PLANNED",
+  };
 
   const response = await fetch(`${apiUrl}/opportunities`, {
     method: "POST",
@@ -225,11 +437,7 @@ const stage = submission.scoring.classification === "hot" ? "IN_BEARBEITUNG" : "
       Authorization: `Bearer ${TWENTY_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
-      stage,
-      pointOfContactId: person.id,
-    }),
+    body: JSON.stringify(opportunityData),
   });
 
   if (!response.ok) {
@@ -238,7 +446,7 @@ const stage = submission.scoring.classification === "hot" ? "IN_BEARBEITUNG" : "
     return {
       id: `local_opp_${Date.now()}`,
       name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
-      stage: "NEUE_ANFRAGE",
+      stage: "NEW",
     };
   }
 
@@ -247,39 +455,159 @@ const stage = submission.scoring.classification === "hot" ? "IN_BEARBEITUNG" : "
 }
 
 /**
- * Step: Create Note with funnel details
+ * Create Note in Twenty CRM linked to Opportunity
+ *
+ * Contains full funnel data in markdown format
  */
-async function createNoteInCRM(submission: LeadSubmission, opportunityId: string): Promise<void> {
+async function createNoteInCRM(
+  submission: LeadSubmission,
+  opportunityId: string,
+  funnelName: string
+): Promise<TwentyNote | null> {
   "use step";
 
   const apiUrl = getTwentyApiUrl();
-  if (!apiUrl || !TWENTY_API_KEY) {
-    console.log("Twenty CRM not configured, skipping note creation");
-    return;
+  if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
+    console.log("Twenty CRM not configured or local opportunity, skipping note creation");
+    return null;
   }
 
-  const noteContent = formatLeadNotes(submission);
+  const noteContent = formatLeadNotes(submission, funnelName);
+  const emoji = getClassificationEmoji(submission.scoring.classification);
 
-  // Note: Twenty CRM uses bodyV2 (RICH_TEXT_V2) which requires
-  // an object with markdown and blocknote properties
-  await fetch(`${apiUrl}/notes`, {
+  const noteData = {
+    title: `${emoji} Funnel-Daten: ${funnelName}`,
+    bodyV2: {
+      markdown: noteContent,
+      blocknote: null,
+    },
+    // Link to opportunity via noteTargets
+  };
+
+  const response = await fetch(`${apiUrl}/notes`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${TWENTY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(noteData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to create note: ${errorText}`);
+    return null;
+  }
+
+  const noteResult = await response.json();
+  const note = noteResult.data || noteResult;
+
+  // Link note to opportunity via noteTarget
+  await fetch(`${apiUrl}/noteTargets`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${TWENTY_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      title: `Funnel: ${submission.funnelId}`,
-      bodyV2: {
-        markdown: noteContent,
-        blocknote: null,  // Will be auto-converted from markdown
-      },
+      noteId: note.id,
+      opportunityId: opportunityId,
     }),
   });
+
+  return note;
 }
 
 /**
- * Step: Send confirmation email to customer (React Email)
+ * Create Task in Twenty CRM for owner follow-up
+ *
+ * Priority and due date based on lead classification:
+ * - HOT: Same day callback
+ * - WARM: Next business day
+ * - POTENTIAL: Within 3 days
+ * - NURTURE: Within a week
+ */
+async function createTaskInCRM(
+  submission: LeadSubmission,
+  opportunityId: string,
+  funnelName: string
+): Promise<TwentyTask | null> {
+  "use step";
+
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
+    console.log("Twenty CRM not configured or local opportunity, skipping task creation");
+    return null;
+  }
+
+  const { classification, totalScore } = submission.scoring;
+  const { firstName, lastName } = parseName(submission.contact.name);
+  const customerName = lastName ? `${firstName} ${lastName}` : firstName;
+  const emoji = getClassificationEmoji(classification);
+
+  const taskData = {
+    title: `${emoji} Rückruf: ${customerName} - ${funnelName}`,
+    status: "TODO",
+    dueAt: getTaskDueDate(classification),
+    bodyV2: {
+      markdown: [
+        `## Lead-Details`,
+        `- **Name:** ${customerName}`,
+        `- **Telefon:** ${submission.contact.phone}`,
+        `- **E-Mail:** ${submission.contact.email}`,
+        `- **Score:** ${totalScore}/100 (${classification.toUpperCase()})`,
+        ``,
+        `## Aktion`,
+        classification === "hot"
+          ? "🔥 **SOFORT anrufen!** Heißer Lead mit hohem Interesse."
+          : classification === "warm"
+          ? "📞 Innerhalb von 24h anrufen. Gutes Interesse vorhanden."
+          : "📋 Lead kontaktieren und Interesse qualifizieren.",
+      ].join("\n"),
+      blocknote: null,
+    },
+  };
+
+  const response = await fetch(`${apiUrl}/tasks`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${TWENTY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(taskData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to create task: ${errorText}`);
+    return null;
+  }
+
+  const taskResult = await response.json();
+  const task = taskResult.data || taskResult;
+
+  // Link task to opportunity via taskTarget
+  await fetch(`${apiUrl}/taskTargets`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${TWENTY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      taskId: task.id,
+      opportunityId: opportunityId,
+    }),
+  });
+
+  return task;
+}
+
+// =============================================================================
+// EMAIL STEPS
+// =============================================================================
+
+/**
+ * Send confirmation email to customer
  */
 async function sendCustomerConfirmationEmail(
   submission: LeadSubmission,
@@ -295,7 +623,6 @@ async function sendCustomerConfirmationEmail(
   const { firstName } = parseName(submission.contact.name);
   const sender = getEmailSender();
 
-  // Render React Email template (customer-facing - no internal scoring data)
   const { html, subject } = await renderLeadConfirmation(
     {
       firstName,
@@ -328,11 +655,12 @@ async function sendCustomerConfirmationEmail(
 }
 
 /**
- * Step: Notify owner about new lead (React Email)
+ * Send notification email to owner with CRM deep link
  */
 async function notifyOwner(
   submission: LeadSubmission,
-  funnelName: string
+  funnelName: string,
+  opportunityLink: string
 ): Promise<void> {
   "use step";
 
@@ -341,13 +669,9 @@ async function notifyOwner(
     return;
   }
 
-  const sender = getEmailSender();
-  const crmLink = "https://crm.fabig-suite.de";
-
-  // Render React Email template
   const { html, subject } = await renderOwnerNotification(
     {
-      firstName: submission.contact.name, // Full name for owner
+      firstName: submission.contact.name,
       email: submission.contact.email,
       phone: submission.contact.phone,
       plz: submission.contact.plz,
@@ -363,7 +687,7 @@ async function notifyOwner(
       classification: submission.scoring.classification,
       tags: submission.scoring.tags,
     },
-    crmLink
+    opportunityLink
   );
 
   await fetch("https://api.resend.com/emails", {
@@ -381,8 +705,42 @@ async function notifyOwner(
   });
 }
 
+// =============================================================================
+// FOLLOW-UP STEPS
+// =============================================================================
+
 /**
- * Step: Send Follow-Up Email #1 (Day 1)
+ * Check if lead has already been contacted
+ * Checks CRM opportunity stage - if moved past NEW, skip follow-up
+ */
+async function checkIfAlreadyContacted(opportunityId: string): Promise<boolean> {
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/opportunities/${opportunityId}`, {
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+      },
+    });
+
+    if (!response.ok) return false;
+
+    const data = await response.json();
+    const opportunity = data.data || data;
+
+    // If stage is past NEW/SCREENING, lead has been contacted
+    const contactedStages = ["MEETING", "PROPOSAL", "CUSTOMER"];
+    return contactedStages.includes(opportunity.stage);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Send Follow-Up Email #1 (Day 1)
  */
 async function sendFollowUp1(
   submission: LeadSubmission,
@@ -392,8 +750,6 @@ async function sendFollowUp1(
 ): Promise<void> {
   "use step";
 
-  // TODO: Check CRM if opportunity has moved past NEW stage
-  // If contacted, skip this follow-up
   const shouldSkip = await checkIfAlreadyContacted(opportunity.id);
   if (shouldSkip) {
     console.log(`Skipping follow-up 1 for ${person.id} - already contacted`);
@@ -438,7 +794,7 @@ async function sendFollowUp1(
 }
 
 /**
- * Step: Send Follow-Up Email #2 (Day 3)
+ * Send Follow-Up Email #2 (Day 4)
  */
 async function sendFollowUp2(
   submission: LeadSubmission,
@@ -492,7 +848,7 @@ async function sendFollowUp2(
 }
 
 /**
- * Step: Send Follow-Up Email #3 (Day 7 - Final)
+ * Send Follow-Up Email #3 (Day 7 - Final)
  */
 async function sendFollowUp3(
   submission: LeadSubmission,
@@ -543,37 +899,4 @@ async function sendFollowUp3(
       html,
     }),
   });
-}
-
-/**
- * Helper: Check if lead has already been contacted
- * Checks CRM opportunity stage - if moved past NEW, skip follow-up
- */
-async function checkIfAlreadyContacted(opportunityId: string): Promise<boolean> {
-  const apiUrl = getTwentyApiUrl();
-  if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
-    return false; // Can't check, assume not contacted
-  }
-
-  try {
-    const response = await fetch(`${apiUrl}/opportunities/${opportunityId}`, {
-      headers: {
-        Authorization: `Bearer ${TWENTY_API_KEY}`,
-      },
-    });
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const data = await response.json();
-    const opportunity = data.data || data;
-
-    // If stage is no longer NEUE_ANFRAGE, lead has been contacted
-    // German stage values from Twenty CRM configuration
-    const contactedStages = ["IN_BEARBEITUNG", "TERMIN_VEREINBART", "ANGEBOT_GESENDET", "KUNDE_GEWONNEN"];
-    return contactedStages.includes(opportunity.stage);
-  } catch {
-    return false;
-  }
 }
