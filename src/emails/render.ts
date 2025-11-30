@@ -13,6 +13,49 @@ import { OwnerNotification } from './templates/OwnerNotification'
 import { brandConfig } from './config/brand.config'
 import React from 'react'
 
+// Mapping from funnel option IDs to German labels
+const OPTION_LABELS: Record<string, string> = {
+  // Smart Home areas
+  lighting: 'Beleuchtung',
+  heating: 'Heizung & Klima',
+  blinds: 'Jalousien & Rollläden',
+  audio: 'Multiroom Audio',
+  cameras: 'Kameras & Türklingel',
+  locks: 'Türschlösser',
+  sockets: 'Steckdosen & Energie',
+  cinema: 'Heimkino',
+  // Elektro scope
+  neuverkabelung: 'Neuverkabelung',
+  sicherungskasten: 'Sicherungskasten',
+  beleuchtung: 'Beleuchtung',
+  steckdosen: 'Mehr Steckdosen',
+  netzwerk: 'Netzwerk/LAN',
+  starkstrom: 'Starkstrom',
+  'smart-home': 'Smart Home Vorbereitung',
+  echeck: 'E-Check/Prüfung',
+  // Property types
+  neubau: 'Neubau',
+  bestand: 'Bestandsimmobilie',
+  sanierung: 'Sanierung',
+  gewerbe: 'Gewerbe',
+  efh: 'Einfamilienhaus',
+  wohnung: 'Wohnung',
+  mfh: 'Mehrfamilienhaus',
+  // Timeline
+  urgent: 'So schnell wie möglich',
+  soon: 'In den nächsten 4 Wochen',
+  planned: 'In 1-3 Monaten',
+  future: 'In 3-12 Monaten',
+  research: 'Nur informieren',
+}
+
+/**
+ * Convert option IDs to German labels
+ */
+function translateOptions(options: string[]): string[] {
+  return options.map(opt => OPTION_LABELS[opt] || opt)
+}
+
 // Types
 interface LeadData {
   firstName: string
@@ -41,13 +84,20 @@ export async function renderLeadConfirmation(
   lead: LeadData,
   funnel: FunnelData
 ): Promise<{ html: string; subject: string }> {
+  // Get selected areas and translate to German labels
+  let selectedServices: string[] | undefined
+  if (Array.isArray(funnel.selectedOptions.interestedAreas)) {
+    selectedServices = translateOptions(funnel.selectedOptions.interestedAreas as string[])
+  } else if (Array.isArray(funnel.selectedOptions.scope)) {
+    // Elektro funnel uses 'scope' instead of 'interestedAreas'
+    selectedServices = translateOptions(funnel.selectedOptions.scope as string[])
+  }
+
   const html = await render(
     React.createElement(LeadConfirmation, {
       firstName: lead.firstName,
       funnelName: funnel.funnelName,
-      selectedServices: Array.isArray(funnel.selectedOptions.interestedAreas)
-        ? funnel.selectedOptions.interestedAreas as string[]
-        : undefined,
+      selectedServices,
     })
   )
 

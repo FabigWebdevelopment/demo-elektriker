@@ -14,6 +14,9 @@ import { emailThemeColors } from './theme-colors'
 // In production, set NEXT_PUBLIC_SITE_URL to your deployed domain
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://demo-elektriker.vercel.app'
 
+// Website URL for footer links (can be different from SITE_URL if using custom domain)
+const WEBSITE_URL = process.env.EMAIL_WEBSITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://elektriker.fabig-suite.de'
+
 export interface BrandConfig {
   // Company Info
   company: {
@@ -116,7 +119,7 @@ export const brandConfig: BrandConfig = {
     phone: '+4989123456789',
     phoneDisplay: '089 1234 5678',
     whatsapp: '4989123456789',
-    website: 'https://mueller-elektro.de',
+    website: WEBSITE_URL,
   },
 
   address: {
