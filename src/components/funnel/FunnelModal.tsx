@@ -425,16 +425,7 @@ export function FunnelModal({
       case 'single-choice': {
         const singleStep = step as SingleChoiceStep
         return (
-          <div
-            className={cn(
-              'grid gap-3',
-              singleStep.layout === 'grid'
-                ? 'grid-cols-2'
-                : singleStep.layout === 'list'
-                ? 'grid-cols-1'
-                : 'grid-cols-1 sm:grid-cols-2'
-            )}
-          >
+          <div className="grid grid-cols-1 gap-3">
             {singleStep.options.map((option) =>
               renderOptionCard(
                 option,
@@ -451,13 +442,12 @@ export function FunnelModal({
         const selectedValues = (data[multiStep.fieldName] as string[]) || []
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {multiStep.options.map((option) =>
                 renderOptionCard(
                   option,
                   selectedValues.includes(option.id),
-                  () => handleMultiSelect(multiStep.fieldName, option, multiStep),
-                  true
+                  () => handleMultiSelect(multiStep.fieldName, option, multiStep)
                 )
               )}
             </div>
@@ -496,13 +486,12 @@ export function FunnelModal({
                     </span>
                     <p className="font-medium">{question.question}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 pl-8">
+                  <div className="grid grid-cols-1 gap-2 pl-8">
                     {question.options.map((option) =>
                       renderOptionCard(
                         option,
                         data[question.fieldName] === option.id,
-                        () => handleSingleSelect(question.fieldName, option),
-                        true
+                        () => handleSingleSelect(question.fieldName, option)
                       )
                     )}
                   </div>
@@ -538,13 +527,12 @@ export function FunnelModal({
                     </span>
                     <p className="font-medium">{question.question}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 pl-8">
+                  <div className="grid grid-cols-1 gap-2 pl-8">
                     {question.options.map((option) =>
                       renderOptionCard(
                         option,
                         data[question.fieldName] === option.id,
-                        () => handleSingleSelect(question.fieldName, option),
-                        true
+                        () => handleSingleSelect(question.fieldName, option)
                       )
                     )}
                   </div>
