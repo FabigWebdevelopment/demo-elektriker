@@ -71,6 +71,8 @@ const TWENTY_API_KEY = process.env.TWENTY_API_KEY || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const OWNER_EMAIL = process.env.NOTIFICATION_EMAIL || "thomas@fabig.website";
 const CRM_BASE_URL = process.env.TWENTY_CRM_BASE_URL || "https://crm.fabig-suite.de";
+// Default workspace member ID for task assignment
+const DEFAULT_ASSIGNEE_ID = process.env.TWENTY_DEFAULT_ASSIGNEE_ID || "dc88ebed-29dc-4904-a745-37cd360af91b";
 
 // Customer-facing email sender (configurable per demo)
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || "Kundenservice";
@@ -350,8 +352,8 @@ export async function processLead(submission: LeadSubmission) {
     // Step 3: Create Note linked to Opportunity
     await createNoteInCRM(submission, opportunity.id, funnelName);
 
-    // Step 4: Create Task for owner
-    await createTaskInCRM(submission, opportunity.id, funnelName);
+    // Step 4: Create Task for owner (linked to opportunity AND person)
+    await createTaskInCRM(submission, opportunity.id, funnelName, person.id);
 
     crmSuccess = true;
     console.log(`✅ CRM operations completed successfully`);
@@ -741,7 +743,8 @@ async function createNoteInCRM(
 async function createTaskInCRM(
   submission: LeadSubmission,
   opportunityId: string,
-  funnelName: string
+  funnelName: string,
+  personId?: string
 ): Promise<TwentyTask | null> {
   "use step";
 
@@ -760,6 +763,8 @@ async function createTaskInCRM(
     title: `${emoji} Rückruf: ${customerName} - ${funnelName}`,
     status: "TODO",
     dueAt: getTaskDueDate(classification),
+    // Assign task to default workspace member
+    assigneeId: DEFAULT_ASSIGNEE_ID,
     bodyV2: {
       markdown: [
         `## Lead-Details`,
@@ -779,7 +784,7 @@ async function createTaskInCRM(
     },
   };
 
-  console.log(`Creating task for opportunity ${opportunityId}...`);
+  console.log(`Creating task for opportunity ${opportunityId} assigned to ${DEFAULT_ASSIGNEE_ID}...`);
 
   const response = await fetch(`${apiUrl}/tasks`, {
     method: "POST",
@@ -808,28 +813,53 @@ async function createTaskInCRM(
   console.log(`✅ Task created with ID: ${task.id}`);
 
   // Link task to opportunity via taskTarget
-  const taskTargetData = {
+  const taskTargetOppData = {
     taskId: task.id,
     opportunityId: opportunityId,
   };
-  console.log(`Linking task to opportunity:`, JSON.stringify(taskTargetData));
+  console.log(`Linking task to opportunity:`, JSON.stringify(taskTargetOppData));
 
-  const linkResponse = await fetch(`${apiUrl}/taskTargets`, {
+  const linkOppResponse = await fetch(`${apiUrl}/taskTargets`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${TWENTY_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(taskTargetData),
+    body: JSON.stringify(taskTargetOppData),
   });
 
-  const linkResponseText = await linkResponse.text();
-  console.log(`TaskTarget API response (${linkResponse.status}):`, linkResponseText.slice(0, 300));
+  const linkOppText = await linkOppResponse.text();
+  console.log(`TaskTarget (opportunity) response (${linkOppResponse.status}):`, linkOppText.slice(0, 300));
 
-  if (!linkResponse.ok) {
-    console.error(`❌ Failed to link task to opportunity: ${linkResponseText}`);
+  if (!linkOppResponse.ok) {
+    console.error(`❌ Failed to link task to opportunity: ${linkOppText}`);
   } else {
     console.log(`✅ Task ${task.id} linked to opportunity ${opportunityId}`);
+  }
+
+  // Also link task to person if available
+  if (personId && !personId.startsWith("local_")) {
+    const taskTargetPersonData = {
+      taskId: task.id,
+      personId: personId,
+    };
+    console.log(`Linking task to person:`, JSON.stringify(taskTargetPersonData));
+
+    const linkPersonResponse = await fetch(`${apiUrl}/taskTargets`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(taskTargetPersonData),
+    });
+
+    const linkPersonText = await linkPersonResponse.text();
+    if (linkPersonResponse.ok) {
+      console.log(`✅ Task ${task.id} linked to person ${personId}`);
+    } else {
+      console.error(`Failed to link task to person (${linkPersonResponse.status}):`, linkPersonText.slice(0, 200));
+    }
   }
 
   return task;
