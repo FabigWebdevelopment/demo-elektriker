@@ -287,8 +287,8 @@ function formatLeadNotes(submission: LeadSubmission, funnelName: string): string
     ``,
     `## Funnel-Daten`,
     `- **Funnel:** ${funnelName}`,
-    `- **Quelle:** ${submission.meta.source}`,
-    `- **Erstellt:** ${submission.meta.createdAt}`,
+    `- **Erstellt von:** Fabig Business Suite`,
+    `- **Erstellt:** ${new Date(submission.meta.createdAt).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
     ``,
     `## Antworten`,
   ];
@@ -602,7 +602,7 @@ async function createOpportunityInCRM(
     console.log("Twenty CRM not configured, skipping opportunity creation");
     return {
       id: `local_opp_${Date.now()}`,
-      name: `${funnelName} - ${personName}`,
+      name: personName,
       stage: "NEW",
     };
   }
@@ -626,8 +626,8 @@ async function createOpportunityInCRM(
   const hasRealPerson = person.id && !person.id.startsWith("local_");
 
   const opportunityData: Record<string, unknown> = {
-    // Basic info
-    name: `${funnelName} - ${personName}`,
+    // Basic info - just last name since funnel is shown via tags/funnelSource
+    name: personName,
     stage: CLASSIFICATION_STAGE[classification] || "NEUE_ANFRAGE",
     closeDate: getExpectedCloseDate(classification),
 
