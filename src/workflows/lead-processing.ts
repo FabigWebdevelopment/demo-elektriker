@@ -113,16 +113,13 @@ const CLASSIFICATION_PROBABILITY: Record<string, number> = {
   nurture: 10,
 };
 
-// Classification to CRM stage mapping
-// Note: Twenty CRM default stages may vary by workspace setup
-// Using "NEW" as safe default for all classifications
-// After workspace is fully configured with TWENTY_CRM_GERMAN_SETUP,
-// you can enable SCREENING, MEETING, PROPOSAL, CUSTOMER stages
+// Classification to CRM stage mapping (matches German CRM setup from OpenAPI)
+// Valid stages: NEUE_ANFRAGE, IN_BEARBEITUNG, TERMIN_VEREINBART, ANGEBOT_GESENDET, KUNDE_GEWONNEN
 const CLASSIFICATION_STAGE: Record<string, string> = {
-  hot: "NEW",            // Hot leads still start as NEW, task urgency handles priority
-  warm: "NEW",           // Neue Anfrage
-  potential: "NEW",      // Neue Anfrage
-  nurture: "NEW",        // Neue Anfrage
+  hot: "NEUE_ANFRAGE",       // Hot leads start as new, urgency field handles priority
+  warm: "NEUE_ANFRAGE",      // Neue Anfrage
+  potential: "NEUE_ANFRAGE", // Neue Anfrage
+  nurture: "NEUE_ANFRAGE",   // Neue Anfrage
 };
 
 // Classification to urgency mapping (custom field)
@@ -200,41 +197,50 @@ function getPreferredContact(phone?: string): string {
 }
 
 /**
- * Format German phone number to international E.164 format
- * Twenty CRM requires international format: +49...
+ * Parse German phone number into Twenty CRM phone format
+ * Twenty CRM requires: primaryPhoneNumber, primaryPhoneCallingCode, primaryPhoneCountryCode
  *
  * Examples:
- * - "015735387471" → "+4915735387471"
- * - "0157 3538 7471" → "+4915735387471"
- * - "+49 157 3538 7471" → "+4915735387471"
- * - "089 1234 5678" → "+49891234567"
+ * - "015735387471" → { number: "15735387471", callingCode: "+49", countryCode: "DE" }
+ * - "0157 3538 7471" → { number: "15735387471", callingCode: "+49", countryCode: "DE" }
+ * - "+49 157 3538 7471" → { number: "15735387471", callingCode: "+49", countryCode: "DE" }
  */
-function formatPhoneInternational(phone: string): string {
+function parseGermanPhone(phone: string): {
+  primaryPhoneNumber: string;
+  primaryPhoneCallingCode: string;
+  primaryPhoneCountryCode: string;
+} {
   // Remove all non-digit characters except leading +
   let cleaned = phone.replace(/[^\d+]/g, "");
 
-  // Already has country code
+  let nationalNumber = "";
+
+  // Already has country code with +49
   if (cleaned.startsWith("+49")) {
-    return cleaned;
+    nationalNumber = cleaned.slice(3);
   }
-
   // Already has country code without +
-  if (cleaned.startsWith("49") && cleaned.length > 10) {
-    return "+" + cleaned;
+  else if (cleaned.startsWith("49") && cleaned.length > 10) {
+    nationalNumber = cleaned.slice(2);
   }
-
   // German format starting with 0
-  if (cleaned.startsWith("0")) {
-    return "+49" + cleaned.slice(1);
+  else if (cleaned.startsWith("0")) {
+    nationalNumber = cleaned.slice(1);
   }
-
   // Just digits without country code (assume German)
-  if (/^\d{8,15}$/.test(cleaned)) {
-    return "+49" + cleaned;
+  else if (/^\d{8,15}$/.test(cleaned)) {
+    nationalNumber = cleaned;
+  }
+  // Fallback - use as-is
+  else {
+    nationalNumber = cleaned.replace(/\D/g, "");
   }
 
-  // Return as-is if can't parse (let CRM handle validation)
-  return phone;
+  return {
+    primaryPhoneNumber: nationalNumber,
+    primaryPhoneCallingCode: "+49",
+    primaryPhoneCountryCode: "DE",
+  };
 }
 
 function formatLeadNotes(submission: LeadSubmission, funnelName: string): string {
@@ -432,22 +438,22 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
 
   const { firstName, lastName } = parseName(submission.contact.name);
 
-  // Format phone to international E.164 format (Twenty CRM requirement)
-  const formattedPhone = submission.contact.phone
-    ? formatPhoneInternational(submission.contact.phone)
-    : "";
+  // Parse phone into Twenty CRM format with country code components
+  const phoneData = submission.contact.phone
+    ? parseGermanPhone(submission.contact.phone)
+    : { primaryPhoneNumber: "", primaryPhoneCallingCode: "", primaryPhoneCountryCode: "" };
 
   const personData = {
     name: { firstName, lastName },
     emails: { primaryEmail: submission.contact.email },
-    phones: { primaryPhoneNumber: formattedPhone },
+    phones: phoneData,
     city: submission.contact.plz || "",
     // Custom fields
     gdprConsent: submission.meta.gdprConsent,
     preferredContact: getPreferredContact(submission.contact.phone),
   };
 
-  console.log(`Creating person with phone: ${submission.contact.phone} → ${formattedPhone}`);
+  console.log(`Creating person with phone: ${submission.contact.phone} → ${JSON.stringify(phoneData)}`);
 
   const response = await fetch(`${apiUrl}/people`, {
     method: "POST",
@@ -508,19 +514,36 @@ async function createOpportunityInCRM(
   const { classification, totalScore } = submission.scoring;
   const funnelConfig = FUNNEL_CONFIG[submission.funnelId];
 
-  // Twenty CRM REST API expects simple number for amount, NOT nested object
-  const estimatedAmount = getEstimatedAmount(submission.funnelId, totalScore);
+  // Calculate estimated amount in micros (€1 = 1,000,000 micros)
+  const estimatedAmountEuros = getEstimatedAmount(submission.funnelId, totalScore);
+  const estimatedAmountMicros = estimatedAmountEuros * 1_000_000;
+
+  // Map funnel ID to CRM funnelSource enum
+  const funnelSourceMap: Record<string, string> = {
+    "smart-home-beratung": "SMART_HOME",
+    "elektro-anfrage": "ELEKTRO",
+    "sicherheit-beratung": "SICHERHEIT",
+    "wallbox-anfrage": "WALLBOX",
+  };
 
   const opportunityData = {
     // Basic info
     name: `${funnelName} - ${personName}`,
-    stage: CLASSIFICATION_STAGE[classification] || "NEW",
+    stage: CLASSIFICATION_STAGE[classification] || "NEUE_ANFRAGE",
     pointOfContactId: person.id,
-
-    // Financial - Simple number format for REST API
-    amount: estimatedAmount,
-    probability: CLASSIFICATION_PROBABILITY[classification] || 20,
     closeDate: getExpectedCloseDate(classification),
+
+    // Financial - Twenty CRM requires nested object with amountMicros
+    amount: {
+      amountMicros: estimatedAmountMicros,
+      currencyCode: "EUR",
+    },
+
+    // Custom fields from German CRM setup
+    leadScore: totalScore,
+    leadClassification: classification.toUpperCase(), // HOT, WARM, POTENTIAL, NURTURE
+    funnelSource: funnelSourceMap[submission.funnelId] || "OTHER",
+    urgency: CLASSIFICATION_URGENCY[classification] || "PLANNED",
   };
 
   console.log(`Creating opportunity with data:`, JSON.stringify(opportunityData, null, 2));
