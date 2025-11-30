@@ -70,14 +70,12 @@ export const LeadConfirmation = ({
                   <tr>
                     <td style={{ paddingRight: '8px' }}>
                       <a href={`tel:${contact.phone}`} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '10px 18px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-                        <img src={images.phoneIcon} alt="" width="14" height="14" style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                        Anrufen
+                        📞 Anrufen
                       </a>
                     </td>
                     <td>
                       <a href={`https://wa.me/${contact.whatsapp}`} style={{ backgroundColor: '#25D366', color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '10px 18px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-                        <img src={images.whatsappIcon} alt="" width="14" height="14" style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                        WhatsApp
+                        💬 WhatsApp
                       </a>
                     </td>
                   </tr>
