@@ -1088,6 +1088,7 @@ async function sendCustomerConfirmationEmail(
   );
 
   // Use verified fabig.website domain - brandConfig domain may not be verified!
+  // BCC to sender email so outgoing emails appear in Twenty CRM (synced mailbox)
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -1097,6 +1098,7 @@ async function sendCustomerConfirmationEmail(
     body: JSON.stringify({
       from: EMAIL_FROM,
       to: submission.contact.email,
+      bcc: EMAIL_FROM_ADDRESS,
       reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
@@ -1264,6 +1266,7 @@ async function sendFollowUp1(
     body: JSON.stringify({
       from: EMAIL_FROM,
       to: submission.contact.email,
+      bcc: EMAIL_FROM_ADDRESS,
       reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
@@ -1328,6 +1331,7 @@ async function sendFollowUp2(
     body: JSON.stringify({
       from: EMAIL_FROM,
       to: submission.contact.email,
+      bcc: EMAIL_FROM_ADDRESS,
       reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
@@ -1392,6 +1396,7 @@ async function sendFollowUp3(
     body: JSON.stringify({
       from: EMAIL_FROM,
       to: submission.contact.email,
+      bcc: EMAIL_FROM_ADDRESS,
       reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
