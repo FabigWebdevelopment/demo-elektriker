@@ -380,14 +380,19 @@ export async function processLead(submission: LeadSubmission) {
   // PHASE 2: Email Notifications (must succeed)
   // ========================================
 
+  // Get opportunity ID for email tracking (may be local fallback)
+  const oppIdForTracking = opportunity?.id && !opportunity.id.startsWith("local_")
+    ? opportunity.id
+    : undefined;
+
   // Step 5: Send customer confirmation email (ALWAYS)
-  await sendCustomerConfirmationEmail(submission, funnelName);
+  await sendCustomerConfirmationEmail(submission, funnelName, oppIdForTracking);
 
   // Step 6: Send owner notification with CRM link (if available)
   const opportunityLink = crmSuccess && opportunity
     ? `${CRM_BASE_URL}/object/opportunity/${opportunity.id}`
     : undefined;
-  await notifyOwner(submission, funnelName, opportunityLink);
+  await notifyOwner(submission, funnelName, opportunityLink, oppIdForTracking);
 
   // ========================================
   // PHASE 3: Follow-up Sequence
@@ -453,7 +458,7 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
     preferredContact: getPreferredContact(submission.contact.phone),
   };
 
-  console.log(`Creating person with phone: ${submission.contact.phone} → ${JSON.stringify(phoneData)}`);
+  console.log(`Creating person with data:`, JSON.stringify(personData, null, 2));
 
   const response = await fetch(`${apiUrl}/people`, {
     method: "POST",
@@ -464,18 +469,26 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
     body: JSON.stringify(personData),
   });
 
+  const responseText = await response.text();
+  console.log(`Person API response (${response.status}):`, responseText);
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Failed to create person: ${errorText}`);
-    return {
-      id: `local_${Date.now()}`,
-      name: { firstName, lastName },
-      emails: { primaryEmail: submission.contact.email },
-    };
+    console.error(`❌ Failed to create person: Status ${response.status}`);
+    console.error(`Response: ${responseText}`);
+    // Throw error so we can see what went wrong - opportunity will be created without person link
+    throw new Error(`Person creation failed (${response.status}): ${responseText.slice(0, 200)}`);
   }
 
-  const data = await response.json();
-  return data.data || data;
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON response from CRM: ${responseText.slice(0, 200)}`);
+  }
+
+  const person = data.data || data;
+  console.log(`✅ Person created with ID: ${person.id}`);
+  return person;
 }
 
 /**
@@ -526,15 +539,21 @@ async function createOpportunityInCRM(
     "wallbox-anfrage": "WALLBOX",
   };
 
-  const opportunityData = {
+  // Only include pointOfContactId if person was actually created in CRM (not local fallback)
+  const hasRealPerson = person.id && !person.id.startsWith("local_");
+
+  const opportunityData: Record<string, unknown> = {
     // Basic info
     name: `${funnelName} - ${personName}`,
     stage: CLASSIFICATION_STAGE[classification] || "NEUE_ANFRAGE",
-    pointOfContactId: person.id,
     closeDate: getExpectedCloseDate(classification),
 
-    // Financial - Twenty CRM requires nested object with amountMicros
-    amount: {
+    // Link to person contact (only if real CRM person)
+    ...(hasRealPerson && { pointOfContactId: person.id }),
+
+    // Financial - estimatedValue is the custom field for projected value
+    // amount is the standard field (we use estimatedValue for our estimates)
+    estimatedValue: {
       amountMicros: estimatedAmountMicros,
       currencyCode: "EUR",
     },
@@ -606,8 +625,9 @@ async function createNoteInCRM(
       markdown: noteContent,
       blocknote: null,
     },
-    // Link to opportunity via noteTargets
   };
+
+  console.log(`Creating note for opportunity ${opportunityId}...`);
 
   const response = await fetch(`${apiUrl}/notes`, {
     method: "POST",
@@ -618,38 +638,46 @@ async function createNoteInCRM(
     body: JSON.stringify(noteData),
   });
 
+  const responseText = await response.text();
+  console.log(`Note API response (${response.status}):`, responseText.slice(0, 500));
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Failed to create note: ${errorText}`);
-    return null;
+    console.error(`❌ Failed to create note: Status ${response.status}`);
+    throw new Error(`Note creation failed: ${responseText.slice(0, 200)}`);
   }
 
-  const noteResult = await response.json();
+  let noteResult;
+  try {
+    noteResult = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON from note API: ${responseText.slice(0, 200)}`);
+  }
   const note = noteResult.data || noteResult;
+  console.log(`✅ Note created with ID: ${note.id}`);
 
   // Link note to opportunity via noteTarget
-  try {
-    const linkResponse = await fetch(`${apiUrl}/noteTargets`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${TWENTY_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        noteId: note.id,
-        opportunityId: opportunityId,
-      }),
-    });
+  const noteTargetData = {
+    noteId: note.id,
+    opportunityId: opportunityId,
+  };
+  console.log(`Linking note to opportunity:`, JSON.stringify(noteTargetData));
 
-    if (!linkResponse.ok) {
-      const errorText = await linkResponse.text();
-      console.error(`Failed to link note to opportunity: ${errorText}`);
-      // Don't throw - note was created, linking is secondary
-    } else {
-      console.log(`✅ Note linked to opportunity ${opportunityId}`);
-    }
-  } catch (error) {
-    console.error(`Error linking note to opportunity:`, error);
+  const linkResponse = await fetch(`${apiUrl}/noteTargets`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${TWENTY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(noteTargetData),
+  });
+
+  const linkResponseText = await linkResponse.text();
+  console.log(`NoteTarget API response (${linkResponse.status}):`, linkResponseText.slice(0, 300));
+
+  if (!linkResponse.ok) {
+    console.error(`❌ Failed to link note to opportunity: ${linkResponseText}`);
+  } else {
+    console.log(`✅ Note ${note.id} linked to opportunity ${opportunityId}`);
   }
 
   return note;
@@ -705,6 +733,8 @@ async function createTaskInCRM(
     },
   };
 
+  console.log(`Creating task for opportunity ${opportunityId}...`);
+
   const response = await fetch(`${apiUrl}/tasks`, {
     method: "POST",
     headers: {
@@ -714,38 +744,46 @@ async function createTaskInCRM(
     body: JSON.stringify(taskData),
   });
 
+  const responseText = await response.text();
+  console.log(`Task API response (${response.status}):`, responseText.slice(0, 500));
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Failed to create task: ${errorText}`);
-    return null;
+    console.error(`❌ Failed to create task: Status ${response.status}`);
+    throw new Error(`Task creation failed: ${responseText.slice(0, 200)}`);
   }
 
-  const taskResult = await response.json();
+  let taskResult;
+  try {
+    taskResult = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON from task API: ${responseText.slice(0, 200)}`);
+  }
   const task = taskResult.data || taskResult;
+  console.log(`✅ Task created with ID: ${task.id}`);
 
   // Link task to opportunity via taskTarget
-  try {
-    const linkResponse = await fetch(`${apiUrl}/taskTargets`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${TWENTY_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        taskId: task.id,
-        opportunityId: opportunityId,
-      }),
-    });
+  const taskTargetData = {
+    taskId: task.id,
+    opportunityId: opportunityId,
+  };
+  console.log(`Linking task to opportunity:`, JSON.stringify(taskTargetData));
 
-    if (!linkResponse.ok) {
-      const errorText = await linkResponse.text();
-      console.error(`Failed to link task to opportunity: ${errorText}`);
-      // Don't throw - task was created, linking is secondary
-    } else {
-      console.log(`✅ Task linked to opportunity ${opportunityId}`);
-    }
-  } catch (error) {
-    console.error(`Error linking task to opportunity:`, error);
+  const linkResponse = await fetch(`${apiUrl}/taskTargets`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${TWENTY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(taskTargetData),
+  });
+
+  const linkResponseText = await linkResponse.text();
+  console.log(`TaskTarget API response (${linkResponse.status}):`, linkResponseText.slice(0, 300));
+
+  if (!linkResponse.ok) {
+    console.error(`❌ Failed to link task to opportunity: ${linkResponseText}`);
+  } else {
+    console.log(`✅ Task ${task.id} linked to opportunity ${opportunityId}`);
   }
 
   return task;
@@ -756,6 +794,71 @@ async function createTaskInCRM(
 // =============================================================================
 
 /**
+ * Create a note in CRM to track sent emails
+ */
+async function createEmailTrackingNote(
+  opportunityId: string,
+  emailType: string,
+  recipient: string,
+  subject: string
+): Promise<void> {
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
+    return; // Skip if CRM not configured or local opportunity
+  }
+
+  const now = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
+
+  const noteData = {
+    title: `📧 E-Mail: ${emailType}`,
+    bodyV2: {
+      markdown: [
+        `## E-Mail gesendet`,
+        `- **Typ:** ${emailType}`,
+        `- **An:** ${recipient}`,
+        `- **Betreff:** ${subject}`,
+        `- **Gesendet:** ${now}`,
+      ].join("\n"),
+      blocknote: null,
+    },
+  };
+
+  try {
+    const response = await fetch(`${apiUrl}/notes`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(noteData),
+    });
+
+    if (response.ok) {
+      const noteResult = await response.json();
+      const note = noteResult.data || noteResult;
+
+      // Link note to opportunity
+      await fetch(`${apiUrl}/noteTargets`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${TWENTY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          noteId: note.id,
+          opportunityId: opportunityId,
+        }),
+      });
+
+      console.log(`📧 Email tracking note created for: ${emailType}`);
+    }
+  } catch (error) {
+    console.error(`Failed to create email tracking note:`, error);
+    // Don't throw - email tracking is secondary
+  }
+}
+
+/**
  * Send confirmation email to customer
  *
  * IMPORTANT: Uses verified fabig.website domain, not brandConfig
@@ -763,7 +866,8 @@ async function createTaskInCRM(
  */
 async function sendCustomerConfirmationEmail(
   submission: LeadSubmission,
-  funnelName: string
+  funnelName: string,
+  opportunityId?: string
 ): Promise<void> {
   "use step";
 
@@ -812,6 +916,11 @@ async function sendCustomerConfirmationEmail(
   }
 
   console.log(`✅ Customer confirmation email sent to ${submission.contact.email} from ${EMAIL_FROM}`);
+
+  // Track email in CRM
+  if (opportunityId) {
+    await createEmailTrackingNote(opportunityId, "Bestätigung", submission.contact.email, subject);
+  }
 }
 
 /**
@@ -820,7 +929,8 @@ async function sendCustomerConfirmationEmail(
 async function notifyOwner(
   submission: LeadSubmission,
   funnelName: string,
-  opportunityLink?: string
+  opportunityLink?: string,
+  opportunityId?: string
 ): Promise<void> {
   "use step";
 
@@ -871,6 +981,11 @@ async function notifyOwner(
   }
 
   console.log(`✅ Owner notification sent to ${OWNER_EMAIL}`);
+
+  // Track email in CRM (owner notification)
+  if (opportunityId) {
+    await createEmailTrackingNote(opportunityId, "Inhaber-Benachrichtigung", OWNER_EMAIL, subject);
+  }
 }
 
 // =============================================================================
@@ -966,6 +1081,10 @@ async function sendFollowUp1(
     console.error(`Failed to send follow-up 1: ${response.status} - ${errorText}`);
   } else {
     console.log(`✅ Follow-up 1 sent to ${submission.contact.email}`);
+    // Track email in CRM
+    if (opportunity.id && !opportunity.id.startsWith("local_")) {
+      await createEmailTrackingNote(opportunity.id, "Follow-up #1 (Tag 1)", submission.contact.email, subject);
+    }
   }
 }
 
@@ -1026,6 +1145,10 @@ async function sendFollowUp2(
     console.error(`Failed to send follow-up 2: ${response.status} - ${errorText}`);
   } else {
     console.log(`✅ Follow-up 2 sent to ${submission.contact.email}`);
+    // Track email in CRM
+    if (opportunity.id && !opportunity.id.startsWith("local_")) {
+      await createEmailTrackingNote(opportunity.id, "Follow-up #2 (Tag 4)", submission.contact.email, subject);
+    }
   }
 }
 
@@ -1086,5 +1209,9 @@ async function sendFollowUp3(
     console.error(`Failed to send follow-up 3: ${response.status} - ${errorText}`);
   } else {
     console.log(`✅ Follow-up 3 (final) sent to ${submission.contact.email}`);
+    // Track email in CRM
+    if (opportunity.id && !opportunity.id.startsWith("local_")) {
+      await createEmailTrackingNote(opportunity.id, "Follow-up #3 (Tag 7 - Final)", submission.contact.email, subject);
+    }
   }
 }
