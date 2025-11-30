@@ -65,18 +65,16 @@ export const LeadConfirmation = ({
                   </div>
                 )}
 
-                {/* CTA Buttons - with emojis */}
-                <table cellPadding="0" cellSpacing="0" border={0} style={{ margin: '0 auto' }}>
-                  <tbody>
-                    <tr>
-                      <td style={{ paddingRight: '8px' }}>
-                        <a href={`tel:${contact.phone}`} style={{ backgroundColor: colors.primary, color: '#ffffff', fontSize: '14px', fontWeight: 'bold', padding: '10px 18px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>{"📞"} Anrufen</a>
-                      </td>
-                      <td>
-                        <a href={`https://wa.me/${contact.whatsapp}`} style={{ backgroundColor: '#25D366', color: '#ffffff', fontSize: '14px', fontWeight: 'bold', padding: '10px 18px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>{"💬"} WhatsApp</a>
-                      </td>
-                    </tr>
-                  </tbody>
+                {/* CTA Buttons */}
+                <table cellPadding="0" cellSpacing="0" style={{ marginBottom: '12px' }}>
+                  <tr>
+                    <td style={{ paddingRight: '6px' }}>
+                      <a href={`tel:${contact.phone}`} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>📞 Anrufen</a>
+                    </td>
+                    <td>
+                      <a href={`https://wa.me/${contact.whatsapp}`} style={{ backgroundColor: '#25D366', color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>💬 WhatsApp</a>
+                    </td>
+                  </tr>
                 </table>
               </td>
             </tr>
