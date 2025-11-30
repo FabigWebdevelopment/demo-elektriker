@@ -120,8 +120,7 @@ export const LeadConfirmation = ({
                       href={`tel:${contact.phone}`}
                       style={{ backgroundColor: primaryColor, color: colors.primaryForeground, fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}
                     >
-                      <img src={images.phoneIcon} alt="" width="16" height="16" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
-                      Anrufen
+                      📞 Anrufen
                     </a>
                   </td>
                   <td>
@@ -129,47 +128,26 @@ export const LeadConfirmation = ({
                       href={`https://wa.me/${contact.whatsapp}`}
                       style={{ backgroundColor: '#25D366', color: '#ffffff', fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}
                     >
-                      <img src={images.whatsappIcon} alt="" width="16" height="16" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
-                      WhatsApp
+                      💬 WhatsApp
                     </a>
                   </td>
                 </tr>
               </table>
             </Section>
-          </Section>
 
-          {/* Trust Bar */}
-          <Section style={{ backgroundColor: mutedBg, padding: '16px 24px', textAlign: 'center' }}>
-            <Text style={{ fontSize: '14px', color: textColor, margin: 0 }}>
-              ⭐ <strong>{trust.googleRating}</strong> Google Rating · <strong>{trust.googleReviewCount}+</strong> Bewertungen · <strong>{trust.yearsInBusiness} Jahre</strong> Erfahrung
+            {/* Trust + Signature combined */}
+            <Text style={{ fontSize: '13px', color: mutedColor, textAlign: 'center', margin: '16px 0 0 0' }}>
+              ⭐ {trust.googleRating} · {trust.googleReviewCount}+ Bewertungen · {trust.yearsInBusiness} Jahre
             </Text>
-          </Section>
-
-          {/* Signature */}
-          <Section style={{ padding: '20px 24px' }}>
-            <Row>
-              {images.ownerPhoto && (
-                <Column width={60}>
-                  <Img src={images.ownerPhoto} width={48} height={48} alt={company.owner} style={{ borderRadius: '50%' }} />
-                </Column>
-              )}
-              <Column>
-                <Text style={{ fontSize: '15px', fontWeight: 'bold', color: textColor, margin: 0 }}>{company.owner}</Text>
-                <Text style={{ fontSize: '13px', color: mutedColor, margin: 0 }}>{company.ownerTitle} · {company.name}</Text>
-              </Column>
-            </Row>
           </Section>
 
           {/* Footer */}
-          <Section style={{ backgroundColor: mutedBg, padding: '16px 24px', textAlign: 'center', borderTop: `1px solid ${colors.border}` }}>
-            <Text style={{ fontSize: '13px', color: mutedColor, margin: '0 0 4px 0' }}>
-              <strong>{company.legalName}</strong>
+          <Section style={{ backgroundColor: mutedBg, padding: '16px 24px', textAlign: 'center' }}>
+            <Text style={{ fontSize: '13px', color: mutedColor, margin: 0 }}>
+              {company.owner}, {company.ownerTitle} · {company.legalName}
             </Text>
-            <Text style={{ fontSize: '12px', color: mutedColor, margin: '0 0 8px 0' }}>
+            <Text style={{ fontSize: '12px', color: mutedColor, margin: '4px 0 0 0' }}>
               {address.full} · <Link href={`tel:${contact.phone}`} style={{ color: primaryColor }}>{contact.phoneDisplay}</Link>
-            </Text>
-            <Text style={{ fontSize: '11px', color: mutedColor, margin: 0 }}>
-              <Link href={`${contact.website}/impressum`} style={{ color: mutedColor }}>Impressum</Link> · <Link href={`${contact.website}/datenschutz`} style={{ color: mutedColor }}>Datenschutz</Link>
             </Text>
           </Section>
 
