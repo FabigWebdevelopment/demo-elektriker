@@ -1,14 +1,5 @@
 import * as React from 'react'
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from '@react-email/components'
+import { Body, Container, Head, Html, Link, Preview } from '@react-email/components'
 import { brandConfig } from '../config/brand.config'
 
 interface OwnerNotificationProps {
@@ -24,10 +15,6 @@ interface OwnerNotificationProps {
   crmLink?: string
 }
 
-/**
- * Owner Notification Email - Compact version
- * Optimized to prevent Gmail truncation
- */
 export const OwnerNotification = ({
   leadName = 'Max Mustermann',
   leadEmail = 'max@beispiel.de',
@@ -36,105 +23,80 @@ export const OwnerNotification = ({
   funnelName = 'Smart Home Beratung',
   leadScore = 85,
   classification = 'hot',
-  selectedOptions = {
-    timeline: 'So schnell wie möglich',
-    propertyType: 'Neubau',
-  },
+  selectedOptions = {},
   submittedAt = new Date().toLocaleString('de-DE'),
   crmLink = 'https://crm.twenty.com',
 }: OwnerNotificationProps) => {
   const { colors } = brandConfig
 
-  const classConfig: Record<string, { emoji: string; label: string; color: string; bg: string }> = {
-    hot: { emoji: '🔥', label: 'HOT', color: '#dc2626', bg: '#fef2f2' },
-    warm: { emoji: '🌡️', label: 'WARM', color: '#f97316', bg: '#fff7ed' },
-    potential: { emoji: '📊', label: 'POTENTIAL', color: '#3b82f6', bg: '#eff6ff' },
-    nurture: { emoji: '🌱', label: 'NURTURE', color: '#22c55e', bg: '#f0fdf4' },
+  const cfg: Record<string, { e: string; l: string; c: string; bg: string }> = {
+    hot: { e: '🔥', l: 'HOT', c: '#dc2626', bg: '#fef2f2' },
+    warm: { e: '🌡️', l: 'WARM', c: '#f97316', bg: '#fff7ed' },
+    potential: { e: '📊', l: 'POTENTIAL', c: '#3b82f6', bg: '#eff6ff' },
+    nurture: { e: '🌱', l: 'NURTURE', c: '#22c55e', bg: '#f0fdf4' },
   }
-
-  const cfg = classConfig[classification] || classConfig.hot
+  const c = cfg[classification] || cfg.hot
 
   return (
     <Html>
       <Head />
-      <Preview>{cfg.emoji} {cfg.label}: {leadName} - {funnelName}</Preview>
-      <Body style={{ backgroundColor: '#f5f5f5', fontFamily: 'Arial,sans-serif', margin: 0, padding: '20px' }}>
-        <Container style={{ backgroundColor: '#fff', maxWidth: '560px', margin: '0 auto', borderRadius: '8px' }}>
+      <Preview>{c.e} {c.l}: {leadName}</Preview>
+      <Body style={{ backgroundColor: '#f5f5f5', fontFamily: 'Arial,sans-serif', margin: 0, padding: '16px' }}>
+        <Container style={{ backgroundColor: '#fff', maxWidth: '560px', margin: '0 auto', borderRadius: '8px', overflow: 'hidden' }}>
 
-          {/* Priority Banner */}
-          <Section style={{ backgroundColor: cfg.bg, borderLeft: `4px solid ${cfg.color}`, padding: '12px 16px' }}>
-            <Text style={{ margin: 0, fontWeight: 'bold', fontSize: '16px', color: cfg.color }}>
-              {cfg.emoji} {cfg.label} LEAD · Score: {leadScore}/100
-            </Text>
-          </Section>
+          <table width="100%" cellPadding="0" cellSpacing="0" style={{ borderCollapse: 'collapse' }}>
+            {/* Priority Banner */}
+            <tr>
+              <td style={{ backgroundColor: c.bg, borderLeft: `4px solid ${c.c}`, padding: '10px 16px' }}>
+                <strong style={{ color: c.c, fontSize: '15px' }}>{c.e} {c.l} · Score: {leadScore}/100</strong>
+              </td>
+            </tr>
 
-          {/* Content */}
-          <Section style={{ padding: '20px' }}>
+            {/* Content */}
+            <tr>
+              <td style={{ padding: '16px' }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>{leadName}</div>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>{funnelName} · {submittedAt}</div>
 
-            {/* Lead Name */}
-            <Text style={{ fontSize: '20px', fontWeight: 'bold', color: '#1a1a1a', margin: '0 0 4px 0' }}>
-              {leadName}
-            </Text>
-            <Text style={{ fontSize: '13px', color: '#666', margin: '0 0 16px 0' }}>
-              {funnelName} · {submittedAt}
-            </Text>
+                {/* Quick Actions */}
+                <table cellPadding="0" cellSpacing="0" style={{ marginBottom: '12px' }}>
+                  <tr>
+                    <td style={{ paddingRight: '6px' }}>
+                      <a href={`tel:${leadPhone}`} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>📞 Anrufen</a>
+                    </td>
+                    <td style={{ paddingRight: '6px' }}>
+                      <a href={`https://wa.me/${leadPhone.replace(/\D/g, '')}`} style={{ backgroundColor: '#25D366', color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>💬 WhatsApp</a>
+                    </td>
+                    <td>
+                      <a href={`mailto:${leadEmail}`} style={{ backgroundColor: '#6b7280', color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>✉️ Mail</a>
+                    </td>
+                  </tr>
+                </table>
 
-            {/* Quick Actions */}
-            <table cellPadding="0" cellSpacing="0" border={0} style={{ marginBottom: '16px' }}>
-              <tr>
-                <td style={{ paddingRight: '8px' }}>
-                  <a href={`tel:${leadPhone}`} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '10px 16px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-                    📞 Anrufen
-                  </a>
-                </td>
-                <td style={{ paddingRight: '8px' }}>
-                  <a href={`https://wa.me/${leadPhone.replace(/[^0-9]/g, '')}`} style={{ backgroundColor: '#25D366', color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '10px 16px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-                    💬 WhatsApp
-                  </a>
-                </td>
-                <td>
-                  <a href={`mailto:${leadEmail}`} style={{ backgroundColor: '#6b7280', color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '10px 16px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-                    ✉️ E-Mail
-                  </a>
-                </td>
-              </tr>
-            </table>
+                {/* Contact */}
+                <div style={{ fontSize: '13px', marginBottom: '4px' }}><strong>Tel:</strong> <Link href={`tel:${leadPhone}`} style={{ color: colors.primary }}>{leadPhone}</Link></div>
+                <div style={{ fontSize: '13px', marginBottom: '4px' }}><strong>Mail:</strong> <Link href={`mailto:${leadEmail}`} style={{ color: colors.primary }}>{leadEmail}</Link></div>
+                {leadPLZ && <div style={{ fontSize: '13px', marginBottom: '8px' }}><strong>PLZ:</strong> {leadPLZ}</div>}
 
-            {/* Contact Info */}
-            <Text style={{ fontSize: '14px', color: '#1a1a1a', margin: '0 0 4px 0' }}>
-              <strong>Tel:</strong> <Link href={`tel:${leadPhone}`} style={{ color: colors.primary }}>{leadPhone}</Link>
-            </Text>
-            <Text style={{ fontSize: '14px', color: '#1a1a1a', margin: '0 0 4px 0' }}>
-              <strong>E-Mail:</strong> <Link href={`mailto:${leadEmail}`} style={{ color: colors.primary }}>{leadEmail}</Link>
-            </Text>
-            {leadPLZ && (
-              <Text style={{ fontSize: '14px', color: '#1a1a1a', margin: '0 0 12px 0' }}>
-                <strong>PLZ:</strong> {leadPLZ}
-              </Text>
-            )}
+                {/* Funnel Data */}
+                {Object.keys(selectedOptions).length > 0 && (
+                  <div style={{ backgroundColor: '#f9f9f9', borderRadius: '4px', padding: '10px', fontSize: '12px', marginTop: '8px' }}>
+                    <strong>Angaben:</strong>
+                    {Object.entries(selectedOptions).slice(0, 3).map(([, v]) => (
+                      <div key={String(v)} style={{ marginTop: '4px' }}>• {Array.isArray(v) ? v.join(', ') : v}</div>
+                    ))}
+                  </div>
+                )}
+              </td>
+            </tr>
 
-            {/* Funnel Data */}
-            {Object.keys(selectedOptions).length > 0 && (
-              <Section style={{ backgroundColor: '#f9fafb', borderRadius: '6px', padding: '12px', marginTop: '8px' }}>
-                <Text style={{ fontSize: '13px', fontWeight: 'bold', color: '#1a1a1a', margin: '0 0 8px 0' }}>
-                  Angaben:
-                </Text>
-                {Object.entries(selectedOptions).slice(0, 4).map(([key, value]) => (
-                  <Text key={key} style={{ fontSize: '13px', color: '#1a1a1a', margin: '0 0 4px 0' }}>
-                    • {Array.isArray(value) ? value.join(', ') : value}
-                  </Text>
-                ))}
-              </Section>
-            )}
-
-          </Section>
-
-          {/* CRM Button */}
-          <Section style={{ padding: '0 20px 20px 20px', textAlign: 'center' }}>
-            <a href={crmLink} style={{ backgroundColor: '#1a1a1a', color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-              Im CRM öffnen →
-            </a>
-          </Section>
+            {/* CRM Button */}
+            <tr>
+              <td style={{ padding: '0 16px 16px', textAlign: 'center' }}>
+                <a href={crmLink} style={{ backgroundColor: '#1a1a1a', color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '10px 20px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>Im CRM öffnen →</a>
+              </td>
+            </tr>
+          </table>
 
         </Container>
       </Body>

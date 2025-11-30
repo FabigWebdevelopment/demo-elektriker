@@ -154,9 +154,9 @@ export const brandConfig: BrandConfig = {
     followUp2Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
     followUp3Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
     hotLeadImage: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
-    // Icons for email buttons
-    phoneIcon: `${SITE_URL}/images/icons/phone-white.svg`,
-    whatsappIcon: `${SITE_URL}/images/icons/whatsapp-white.svg`,
+    // Icons for email buttons (PNG for email client compatibility)
+    phoneIcon: `${SITE_URL}/images/icons/phone-white.png`,
+    whatsappIcon: `${SITE_URL}/images/icons/whatsapp-white.png`,
   },
 
   social: {
