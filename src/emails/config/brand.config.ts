@@ -139,18 +139,18 @@ export const brandConfig: BrandConfig = {
   images: {
     logo: `${SITE_URL}/demo-electrician/electrician-logo.png`,
     logoWidth: 180,
-    // Owner photo - generated using CEO reference image
-    ownerPhoto: `${SITE_URL}/images/email/owner-photo.png`,
+    // Owner photo - generated using CEO reference image (optimized JPG)
+    ownerPhoto: `${SITE_URL}/images/email/owner-photo.jpg`,
     emailBanner: `${SITE_URL}/images/email/banner.jpg`,
     // Reference image for AI generation - set via CEO_REFERENCE_IMAGE_URL env var
     ceoReferenceImage: process.env.CEO_REFERENCE_IMAGE_URL || '',
     // Generated images featuring the CEO in different scenarios
     // These must exist in public/images/email/
-    confirmationImage: `${SITE_URL}/images/email/confirmation-electrician.png`,
-    followUp1Image: `${SITE_URL}/images/email/confirmation-electrician.png`,
-    followUp2Image: `${SITE_URL}/images/email/confirmation-electrician.png`,
-    followUp3Image: `${SITE_URL}/images/email/confirmation-electrician.png`,
-    hotLeadImage: `${SITE_URL}/images/email/confirmation-electrician.png`,
+    confirmationImage: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
+    followUp1Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
+    followUp2Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
+    followUp3Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
+    hotLeadImage: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
   },
 
   social: {
