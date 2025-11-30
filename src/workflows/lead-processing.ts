@@ -421,12 +421,10 @@ export async function processLead(submission: LeadSubmission) {
 // =============================================================================
 
 /**
- * Create Person in Twenty CRM
+ * Find or Create Person in Twenty CRM
  *
- * Includes:
- * - Full contact details (name, email, phone, city/PLZ)
- * - GDPR consent flag
- * - Preferred contact method
+ * First searches for existing person by email. If found, returns that person.
+ * If not found, creates a new person with all contact details.
  */
 async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPerson> {
   "use step";
@@ -442,6 +440,35 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
   }
 
   const { firstName, lastName } = parseName(submission.contact.name);
+  const email = submission.contact.email;
+
+  // First, search for existing person by email
+  console.log(`Searching for existing person with email: ${email}`);
+  const searchUrl = `${apiUrl}/people?filter=emails.primaryEmail[eq]:"${encodeURIComponent(email)}"`;
+
+  try {
+    const searchResponse = await fetch(searchUrl, {
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+      },
+    });
+
+    if (searchResponse.ok) {
+      const searchResult = await searchResponse.json();
+      const existingPeople = searchResult.data?.people || searchResult.data || searchResult.people || [];
+
+      if (Array.isArray(existingPeople) && existingPeople.length > 0) {
+        const existingPerson = existingPeople[0];
+        console.log(`✅ Found existing person: ${existingPerson.id} (${existingPerson.name?.firstName} ${existingPerson.name?.lastName})`);
+        return existingPerson;
+      }
+    }
+  } catch (searchError) {
+    console.log(`Search failed, will try to create new person:`, searchError);
+  }
+
+  // Person not found - create new one
+  console.log(`No existing person found, creating new...`);
 
   // Parse phone into Twenty CRM format with country code components
   const phoneData = submission.contact.phone
@@ -450,7 +477,7 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
 
   const personData = {
     name: { firstName, lastName },
-    emails: { primaryEmail: submission.contact.email },
+    emails: { primaryEmail: email },
     phones: phoneData,
     city: submission.contact.plz || "",
     // Custom fields
@@ -472,10 +499,29 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
   const responseText = await response.text();
   console.log(`Person API response (${response.status}):`, responseText);
 
+  // Handle duplicate email error gracefully - search again
+  if (response.status === 400 && responseText.includes("Duplicate")) {
+    console.log(`Duplicate detected, searching for existing person...`);
+    try {
+      const retrySearch = await fetch(searchUrl, {
+        headers: { Authorization: `Bearer ${TWENTY_API_KEY}` },
+      });
+      if (retrySearch.ok) {
+        const retryResult = await retrySearch.json();
+        const people = retryResult.data?.people || retryResult.data || retryResult.people || [];
+        if (Array.isArray(people) && people.length > 0) {
+          console.log(`✅ Found existing person on retry: ${people[0].id}`);
+          return people[0];
+        }
+      }
+    } catch (e) {
+      console.error(`Retry search failed:`, e);
+    }
+  }
+
   if (!response.ok) {
     console.error(`❌ Failed to create person: Status ${response.status}`);
     console.error(`Response: ${responseText}`);
-    // Throw error so we can see what went wrong - opportunity will be created without person link
     throw new Error(`Person creation failed (${response.status}): ${responseText.slice(0, 200)}`);
   }
 
