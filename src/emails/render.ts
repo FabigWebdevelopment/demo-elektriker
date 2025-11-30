@@ -184,10 +184,10 @@ export async function renderOwnerNotification(
   }
 
   const classificationLabel = {
-    hot: 'HOT LEAD',
-    warm: 'WARM LEAD',
-    potential: 'POTENTIAL',
-    nurture: 'NURTURE',
+    hot: 'HEISSE ANFRAGE',
+    warm: 'WARME ANFRAGE',
+    potential: 'INTERESSENT',
+    nurture: 'LANGFRISTIG',
   }
 
   const html = await render(
