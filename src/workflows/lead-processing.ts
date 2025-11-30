@@ -397,12 +397,15 @@ async function createOpportunityInCRM(
 ): Promise<TwentyOpportunity> {
   "use step";
 
+  // Safely get person name - handle different response structures
+  const personName = person?.name?.lastName || person?.name?.firstName || submission.contact.name.split(" ").pop() || "Unbekannt";
+
   const apiUrl = getTwentyApiUrl();
   if (!apiUrl || !TWENTY_API_KEY) {
     console.log("Twenty CRM not configured, skipping opportunity creation");
     return {
       id: `local_opp_${Date.now()}`,
-      name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
+      name: `${funnelName} - ${personName}`,
       stage: "NEW",
     };
   }
@@ -412,7 +415,7 @@ async function createOpportunityInCRM(
 
   const opportunityData = {
     // Basic info
-    name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
+    name: `${funnelName} - ${personName}`,
     stage: CLASSIFICATION_STAGE[classification] || "NEW",
     pointOfContactId: person.id,
 
@@ -445,7 +448,7 @@ async function createOpportunityInCRM(
     console.error(`Failed to create opportunity: ${errorText}`);
     return {
       id: `local_opp_${Date.now()}`,
-      name: `${funnelName} - ${person.name.lastName || person.name.firstName}`,
+      name: `${funnelName} - ${personName}`,
       stage: "NEW",
     };
   }
