@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { render } from '@react-email/render'
-import LeadConfirmation from '@/emails/templates/LeadConfirmation'
-import OwnerNotification from '@/emails/templates/OwnerNotification'
+import { renderLeadConfirmation, renderOwnerNotification } from '@/emails/render'
 import { brandConfig } from '@/emails/config/brand.config'
-import React from 'react'
 
 const TWENTY_API_URL = process.env.TWENTY_CRM_API_URL || ''
 const TWENTY_API_KEY = process.env.TWENTY_API_KEY || ''
@@ -12,11 +9,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const OWNER_EMAIL = process.env.NOTIFICATION_EMAIL || 'thomas@fabig.website'
 
 /**
- * Test endpoint for the full lead flow:
- * 1. Create Person in CRM
- * 2. Create Opportunity in CRM
- * 3. Send customer confirmation email
- * 4. Send owner notification email
+ * Test endpoint using the SAME render functions as the workflow
  */
 export async function POST(request: NextRequest) {
   const results: string[] = []
@@ -34,7 +27,6 @@ export async function POST(request: NextRequest) {
     } = body
 
     const classificationTyped = classification as 'hot' | 'warm' | 'potential' | 'nurture'
-
     const firstName = customerName.split(' ')[0]
     const lastName = customerName.split(' ').slice(1).join(' ') || ''
 
@@ -89,24 +81,32 @@ export async function POST(request: NextRequest) {
       results.push('⚠️ CRM not configured')
     }
 
-    // 3. Send customer confirmation email
+    // 3. Send customer confirmation email - using SAME render as workflow
     if (RESEND_API_KEY) {
       const resend = new Resend(RESEND_API_KEY)
 
       try {
-        const customerHtml = await render(
-          React.createElement(LeadConfirmation, {
+        const { html: customerHtml, subject: customerSubject } = await renderLeadConfirmation(
+          {
             firstName,
+            email: customerEmail,
+            phone,
+            plz,
+          },
+          {
+            funnelId: 'smart-home-beratung',
             funnelName,
-            selectedServices: ['Beleuchtung', 'Heizung & Klima'],
-          })
+            selectedOptions: {
+              interestedAreas: ['Beleuchtung', 'Heizung & Klima'],
+            },
+          }
         )
 
         const customerResult = await resend.emails.send({
           from: `${brandConfig.email.fromName} <info@fabig.website>`,
           to: customerEmail,
           replyTo: brandConfig.email.replyTo,
-          subject: `Deine ${funnelName} Anfrage ✓`,
+          subject: customerSubject,
           html: customerHtml,
         })
 
@@ -119,35 +119,35 @@ export async function POST(request: NextRequest) {
         results.push(`❌ Customer email error: ${e}`)
       }
 
-      // 4. Send owner notification email
+      // 4. Send owner notification email - using SAME render as workflow
       try {
-        const ownerHtml = await render(
-          React.createElement(OwnerNotification, {
-            leadName: customerName,
-            leadEmail: customerEmail,
-            leadPhone: phone,
-            leadPLZ: plz,
-            funnelName,
+        const { html: ownerHtml, subject: ownerSubject } = await renderOwnerNotification(
+          {
+            firstName: customerName,
+            email: customerEmail,
+            phone,
+            plz,
+          },
+          {
             funnelId: 'smart-home-beratung',
-            leadScore: score,
-            classification: classificationTyped,
-            tags: ['test', 'smart-home'],
+            funnelName,
             selectedOptions: {
               primaryMotivation: 'Test',
               interestedAreas: ['Beleuchtung', 'Heizung'],
             },
-            submittedAt: new Date().toLocaleString('de-DE'),
-            crmLink: 'https://crm.fabig-suite.de',
-          })
+          },
+          {
+            score,
+            classification: classificationTyped,
+            tags: ['test', 'smart-home'],
+          },
+          'https://crm.fabig-suite.de'
         )
-
-        const classificationEmoji: Record<string, string> = { hot: '🔥', warm: '🌡️', potential: '📊', nurture: '🌱' }
-        const classificationLabel: Record<string, string> = { hot: 'HOT LEAD', warm: 'WARM LEAD', potential: 'POTENTIAL', nurture: 'NURTURE' }
 
         const ownerResult = await resend.emails.send({
           from: 'Lead Notification <noreply@fabig.website>',
           to: OWNER_EMAIL,
-          subject: `${classificationEmoji[classificationTyped]} ${classificationLabel[classificationTyped]}: ${customerName} - ${funnelName}`,
+          subject: ownerSubject,
           html: ownerHtml,
         })
 
@@ -187,15 +187,6 @@ export async function GET() {
   return NextResponse.json({
     endpoint: 'test-email-flow',
     method: 'POST',
-    description: 'Test the full lead flow (CRM + emails)',
-    body: {
-      customerEmail: 'customer@example.com',
-      customerName: 'Max Mustermann',
-      phone: '+49 89 1234567',
-      plz: '80331',
-      funnelName: 'Smart Home Beratung',
-      score: 75,
-      classification: 'warm | hot | potential | nurture',
-    }
+    description: 'Test the full lead flow using SAME render as workflow',
   })
 }
