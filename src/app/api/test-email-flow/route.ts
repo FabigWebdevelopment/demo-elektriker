@@ -30,8 +30,10 @@ export async function POST(request: NextRequest) {
       plz = '80331',
       funnelName = 'Smart Home Beratung',
       score = 75,
-      classification = 'warm' as const,
+      classification = 'warm',
     } = body
+
+    const classificationTyped = classification as 'hot' | 'warm' | 'potential' | 'nurture'
 
     const firstName = customerName.split(' ')[0]
     const lastName = customerName.split(' ').slice(1).join(' ') || ''
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
             funnelName,
             funnelId: 'smart-home-beratung',
             leadScore: score,
-            classification,
+            classification: classificationTyped,
             tags: ['test', 'smart-home'],
             selectedOptions: {
               primaryMotivation: 'Test',
@@ -139,13 +141,13 @@ export async function POST(request: NextRequest) {
           })
         )
 
-        const classificationEmoji = { hot: '🔥', warm: '🌡️', potential: '📊', nurture: '🌱' }
-        const classificationLabel = { hot: 'HOT LEAD', warm: 'WARM LEAD', potential: 'POTENTIAL', nurture: 'NURTURE' }
+        const classificationEmoji: Record<string, string> = { hot: '🔥', warm: '🌡️', potential: '📊', nurture: '🌱' }
+        const classificationLabel: Record<string, string> = { hot: 'HOT LEAD', warm: 'WARM LEAD', potential: 'POTENTIAL', nurture: 'NURTURE' }
 
         const ownerResult = await resend.emails.send({
           from: 'Lead Notification <noreply@fabig.website>',
           to: OWNER_EMAIL,
-          subject: `${classificationEmoji[classification]} ${classificationLabel[classification]}: ${customerName} - ${funnelName}`,
+          subject: `${classificationEmoji[classificationTyped]} ${classificationLabel[classificationTyped]}: ${customerName} - ${funnelName}`,
           html: ownerHtml,
         })
 

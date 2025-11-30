@@ -1,3 +1,46 @@
+# Scripts Dokumentation
+
+## Twenty CRM Setup Scripts
+
+### Deutsches Workspace-Template
+
+Für **neue Kunden-Workspaces** das komplette deutsche Template anwenden:
+
+```bash
+npx tsx scripts/setup-german-workspace.ts
+```
+
+**Was wird konfiguriert:**
+- Alle Objekt-Labels (People→Kontakte, Tasks→Aufgaben, Notes→Notizen, etc.)
+- Alle Feld-Labels (Created at→Erstellt am, Status, Beschreibung, etc.)
+- Task-Status-Optionen (To do→Zu erledigen, In progress→In Bearbeitung, Done→Erledigt)
+- Opportunity-Pipeline (Neue Anfrage, In Bearbeitung, Termin vereinbart, Angebot gesendet, Kunde gewonnen)
+- Custom Fields für Lead-Management (Lead-Bewertung, Einstufung, Dringlichkeit, DSGVO-Einwilligung)
+
+**Voraussetzungen:**
+```bash
+# .env Datei muss enthalten:
+TWENTY_CRM_API_URL=https://crm.fabig-suite.de
+TWENTY_API_KEY=your_api_key_here
+```
+
+**Workflow für neue Kunden:**
+1. Twenty Workspace erstellen
+2. API Key in Settings → Developers generieren
+3. `.env` mit URL und Key aktualisieren
+4. `npx tsx scripts/setup-german-workspace.ts` ausführen
+5. Fertig! CRM ist komplett auf Deutsch.
+
+### Nur Custom Fields erstellen
+
+```bash
+npx tsx scripts/setup-twenty-crm.ts
+```
+
+Erstellt nur die Custom Fields für Lead-Management ohne die Übersetzungen.
+
+---
+
 # Image Generation Scripts
 
 ## Quick Start

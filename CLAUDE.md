@@ -648,6 +648,8 @@ Before launching any client site:
 | `docs/IMAGE_PROMPT_TEMPLATES.md` | Generating AI images |
 | `docs/CLIENT_BUILD_CHECKLIST.md` | Pre-launch verification |
 | `docs/MULTI_REPO_ARCHITECTURE.md` | System architecture |
+| `docs/TWENTY_CRM_API_CUSTOMIZATION.md` | **CRM API customization** (German labels, fields, setup) |
+| `docs/TWENTY_CRM_GERMAN_SETUP.md` | German workspace configuration details |
 
 ---
 
