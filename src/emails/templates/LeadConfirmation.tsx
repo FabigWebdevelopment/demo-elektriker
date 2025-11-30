@@ -8,6 +8,7 @@ interface LeadConfirmationProps {
   selectedServices?: string[]
 }
 
+// v2 - Force rebuild
 export const LeadConfirmation = ({
   firstName = 'Max',
   funnelName = 'Smart Home Beratung',
