@@ -199,6 +199,37 @@ function getPreferredContact(phone?: string): string {
 }
 
 /**
+ * Extract created entity from Twenty CRM POST response
+ *
+ * Twenty CRM POST responses have structure:
+ * { "data": { "createPerson": {...} } }
+ * { "data": { "createOpportunity": {...} } }
+ * etc.
+ *
+ * This helper finds the create* key and returns the actual entity
+ */
+function extractCreatedEntity(responseData: Record<string, unknown>): Record<string, unknown> | null {
+  // If response has 'data' wrapper, unwrap it
+  const data = (responseData.data as Record<string, unknown>) || responseData;
+
+  // Find the create* key (createPerson, createOpportunity, createNote, createTask, etc.)
+  const createKey = Object.keys(data).find(key => key.startsWith('create'));
+
+  if (createKey && data[createKey]) {
+    return data[createKey] as Record<string, unknown>;
+  }
+
+  // Fallback: maybe it's a direct response (for some endpoints)
+  if (data.id) {
+    return data;
+  }
+
+  // Last resort: return null
+  console.error('Could not extract entity from response:', JSON.stringify(responseData).slice(0, 500));
+  return null;
+}
+
+/**
  * Parse German phone number into Twenty CRM phone format
  * Twenty CRM requires: primaryPhoneNumber, primaryPhoneCallingCode, primaryPhoneCountryCode
  *
@@ -534,9 +565,13 @@ async function createPersonInCRM(submission: LeadSubmission): Promise<TwentyPers
     throw new Error(`Invalid JSON response from CRM: ${responseText.slice(0, 200)}`);
   }
 
-  const person = data.data || data;
+  // Extract person from Twenty CRM response structure: { data: { createPerson: {...} } }
+  const person = extractCreatedEntity(data);
+  if (!person || !person.id) {
+    throw new Error(`Failed to extract person from response: ${responseText.slice(0, 300)}`);
+  }
   console.log(`✅ Person created with ID: ${person.id}`);
-  return person;
+  return person as unknown as TwentyPerson;
 }
 
 /**
@@ -641,9 +676,13 @@ async function createOpportunityInCRM(
     throw new Error(`Invalid JSON response from CRM: ${responseText.slice(0, 200)}`);
   }
 
-  const opportunity = data.data || data;
+  // Extract opportunity from Twenty CRM response structure: { data: { createOpportunity: {...} } }
+  const opportunity = extractCreatedEntity(data);
+  if (!opportunity || !opportunity.id) {
+    throw new Error(`Failed to extract opportunity from response: ${responseText.slice(0, 300)}`);
+  }
   console.log(`✅ Opportunity created: ${opportunity.id}`);
-  return opportunity;
+  return opportunity as unknown as TwentyOpportunity;
 }
 
 /**
@@ -700,7 +739,12 @@ async function createNoteInCRM(
   } catch {
     throw new Error(`Invalid JSON from note API: ${responseText.slice(0, 200)}`);
   }
-  const note = noteResult.data || noteResult;
+
+  // Extract note from Twenty CRM response structure: { data: { createNote: {...} } }
+  const note = extractCreatedEntity(noteResult);
+  if (!note || !note.id) {
+    throw new Error(`Failed to extract note from response: ${responseText.slice(0, 300)}`);
+  }
   console.log(`✅ Note created with ID: ${note.id}`);
 
   // Link note to opportunity via noteTarget
@@ -728,7 +772,7 @@ async function createNoteInCRM(
     console.log(`✅ Note ${note.id} linked to opportunity ${opportunityId}`);
   }
 
-  return note;
+  return note as unknown as TwentyNote;
 }
 
 /**
@@ -809,7 +853,12 @@ async function createTaskInCRM(
   } catch {
     throw new Error(`Invalid JSON from task API: ${responseText.slice(0, 200)}`);
   }
-  const task = taskResult.data || taskResult;
+
+  // Extract task from Twenty CRM response structure: { data: { createTask: {...} } }
+  const task = extractCreatedEntity(taskResult);
+  if (!task || !task.id) {
+    throw new Error(`Failed to extract task from response: ${responseText.slice(0, 300)}`);
+  }
   console.log(`✅ Task created with ID: ${task.id}`);
 
   // Link task to opportunity via taskTarget
@@ -862,7 +911,7 @@ async function createTaskInCRM(
     }
   }
 
-  return task;
+  return task as unknown as TwentyTask;
 }
 
 // =============================================================================
@@ -968,7 +1017,12 @@ async function createEmailTrackingNoteAsFallback(
 
     if (response.ok) {
       const noteResult = await response.json();
-      const note = noteResult.data || noteResult;
+      // Extract note from Twenty CRM response structure
+      const note = extractCreatedEntity(noteResult);
+      if (!note || !note.id) {
+        console.error(`Failed to extract note from fallback response`);
+        return;
+      }
 
       // Link note to opportunity via noteTarget
       const linkResponse = await fetch(`${apiUrl}/noteTargets`, {
