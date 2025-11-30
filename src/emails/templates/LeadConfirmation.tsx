@@ -51,6 +51,18 @@ export const LeadConfirmation = ({
                   Danke für dein Interesse an <strong>{funnelName}</strong>. Wir melden uns innerhalb von 24h.
                 </div>
 
+                {/* CTA Buttons - moved up */}
+                <table cellPadding="0" cellSpacing="0" style={{ marginBottom: '16px' }}>
+                  <tr>
+                    <td style={{ paddingRight: '6px' }}>
+                      <a href={`tel:${contact.phone}`} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>📞 Anrufen</a>
+                    </td>
+                    <td>
+                      <a href={`https://wa.me/${contact.whatsapp}`} style={{ backgroundColor: '#25D366', color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>💬 WhatsApp</a>
+                    </td>
+                  </tr>
+                </table>
+
                 {/* Steps */}
                 <div style={{ backgroundColor: '#f9f9f9', borderRadius: '6px', padding: '12px', marginBottom: '16px', fontSize: '13px' }}>
                   <div style={{ marginBottom: '6px' }}><strong style={{ color: colors.primary }}>1.</strong> Prüfung — Jetzt</div>
@@ -64,18 +76,6 @@ export const LeadConfirmation = ({
                     Bereiche: {selectedServices.join(', ')}
                   </div>
                 )}
-
-                {/* CTA Buttons */}
-                <table cellPadding="0" cellSpacing="0" style={{ marginBottom: '12px' }}>
-                  <tr>
-                    <td style={{ paddingRight: '6px' }}>
-                      <a href={`tel:${contact.phone}`} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>📞 Anrufen</a>
-                    </td>
-                    <td>
-                      <a href={`https://wa.me/${contact.whatsapp}`} style={{ backgroundColor: '#25D366', color: '#fff', fontSize: '13px', fontWeight: 'bold', padding: '8px 12px', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}>💬 WhatsApp</a>
-                    </td>
-                  </tr>
-                </table>
               </td>
             </tr>
 
