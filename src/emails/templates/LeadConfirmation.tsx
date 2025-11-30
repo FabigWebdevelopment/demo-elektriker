@@ -70,12 +70,12 @@ export const LeadConfirmation = ({
                   <tr>
                     <td style={{ paddingRight: '8px' }}>
                       <a href={`tel:${contact.phone}`} style={{ backgroundColor: colors.primary, color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '10px 18px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-                        &#9742; Anrufen
+                        ☎ Anrufen
                       </a>
                     </td>
                     <td>
                       <a href={`https://wa.me/${contact.whatsapp}`} style={{ backgroundColor: '#25D366', color: '#fff', fontSize: '14px', fontWeight: 'bold', padding: '10px 18px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-                        &#9993; WhatsApp
+                        ✆ WhatsApp
                       </a>
                     </td>
                   </tr>
