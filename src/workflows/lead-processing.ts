@@ -840,7 +840,8 @@ async function createTaskInCRM(
 // =============================================================================
 
 /**
- * Create a note in CRM to track sent emails
+ * Create a timeline activity in CRM to track sent emails
+ * Uses TimelineActivity API which shows directly in the opportunity timeline
  */
 async function createEmailTrackingNote(
   opportunityId: string,
@@ -850,8 +851,65 @@ async function createEmailTrackingNote(
 ): Promise<void> {
   const apiUrl = getTwentyApiUrl();
   if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
-    return; // Skip if CRM not configured or local opportunity
+    console.log(`Skipping email tracking - no valid opportunity ID`);
+    return;
   }
+
+  const now = new Date().toISOString();
+
+  // Create timeline activity for better visibility
+  const activityData = {
+    name: `📧 ${emailType}`,
+    happensAt: now,
+    opportunityId: opportunityId,
+    properties: {
+      type: "email_sent",
+      emailType: emailType,
+      recipient: recipient,
+      subject: subject,
+      sentAt: now,
+    },
+  };
+
+  console.log(`Creating timeline activity for email: ${emailType}`);
+
+  try {
+    const response = await fetch(`${apiUrl}/timelineActivities`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(activityData),
+    });
+
+    const responseText = await response.text();
+
+    if (response.ok) {
+      console.log(`📧 Timeline activity created for: ${emailType}`);
+    } else {
+      console.error(`Failed to create timeline activity (${response.status}):`, responseText);
+
+      // Fallback to creating a Note if timeline activity fails
+      console.log(`Falling back to creating a Note...`);
+      await createEmailTrackingNoteAsFallback(opportunityId, emailType, recipient, subject);
+    }
+  } catch (error) {
+    console.error(`Failed to create email tracking:`, error);
+  }
+}
+
+/**
+ * Fallback: Create a Note in CRM if timeline activity fails
+ */
+async function createEmailTrackingNoteAsFallback(
+  opportunityId: string,
+  emailType: string,
+  recipient: string,
+  subject: string
+): Promise<void> {
+  const apiUrl = getTwentyApiUrl();
+  if (!apiUrl || !TWENTY_API_KEY) return;
 
   const now = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
 
@@ -865,7 +923,6 @@ async function createEmailTrackingNote(
         `- **Betreff:** ${subject}`,
         `- **Gesendet:** ${now}`,
       ].join("\n"),
-      blocknote: null,
     },
   };
 
@@ -883,8 +940,8 @@ async function createEmailTrackingNote(
       const noteResult = await response.json();
       const note = noteResult.data || noteResult;
 
-      // Link note to opportunity
-      await fetch(`${apiUrl}/noteTargets`, {
+      // Link note to opportunity via noteTarget
+      const linkResponse = await fetch(`${apiUrl}/noteTargets`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${TWENTY_API_KEY}`,
@@ -896,11 +953,18 @@ async function createEmailTrackingNote(
         }),
       });
 
-      console.log(`📧 Email tracking note created for: ${emailType}`);
+      if (linkResponse.ok) {
+        console.log(`📧 Email note created and linked: ${emailType}`);
+      } else {
+        const linkError = await linkResponse.text();
+        console.error(`Failed to link note (${linkResponse.status}):`, linkError);
+      }
+    } else {
+      const errorText = await response.text();
+      console.error(`Failed to create note (${response.status}):`, errorText);
     }
   } catch (error) {
-    console.error(`Failed to create email tracking note:`, error);
-    // Don't throw - email tracking is secondary
+    console.error(`Error creating email note:`, error);
   }
 }
 
