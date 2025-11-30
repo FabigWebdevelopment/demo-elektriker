@@ -9,6 +9,8 @@ import {
   Preview,
   Section,
   Text,
+  Row,
+  Column,
 } from '@react-email/components'
 import { brandConfig } from '../config/brand.config'
 
@@ -19,8 +21,14 @@ interface LeadConfirmationProps {
 }
 
 /**
- * Lead Confirmation Email - Optimized for Gmail
- * Gmail truncates emails at ~102KB. This template is optimized to stay under that limit.
+ * Lead Confirmation Email - Enterprise Level
+ *
+ * Features:
+ * - Hero image with brand
+ * - Clear process steps
+ * - Owner photo signature
+ * - Trust indicators
+ * - Professional footer
  */
 export const LeadConfirmation = ({
   firstName = 'Max',
@@ -38,8 +46,8 @@ export const LeadConfirmation = ({
   return (
     <Html>
       <Head />
-      <Preview>Deine {funnelName} Anfrage - {company.name}</Preview>
-      <Body style={{ backgroundColor: mutedBg, fontFamily: 'Arial,sans-serif', margin: 0, padding: '20px 0' }}>
+      <Preview>Deine {funnelName} Anfrage ist eingegangen - {company.name}</Preview>
+      <Body style={{ backgroundColor: mutedBg, fontFamily: 'Arial, sans-serif', margin: 0, padding: '20px 0' }}>
         <Container style={{ backgroundColor: bgColor, maxWidth: '600px', margin: '0 auto', borderRadius: '8px' }}>
 
           {/* Header */}
@@ -127,15 +135,32 @@ export const LeadConfirmation = ({
                 </tr>
               </table>
             </Section>
+          </Section>
 
-            {/* Trust */}
-            <Text style={{ fontSize: '13px', color: mutedColor, textAlign: 'center', margin: '16px 0 0 0' }}>
-              ⭐ {trust.googleRating} · {trust.googleReviewCount}+ Bewertungen · {trust.yearsInBusiness} Jahre
+          {/* Trust Bar */}
+          <Section style={{ backgroundColor: mutedBg, padding: '16px 24px', textAlign: 'center' }}>
+            <Text style={{ fontSize: '14px', color: textColor, margin: 0 }}>
+              ⭐ <strong>{trust.googleRating}</strong> Google Rating · <strong>{trust.googleReviewCount}+</strong> Bewertungen · <strong>{trust.yearsInBusiness} Jahre</strong> Erfahrung
             </Text>
           </Section>
 
-          {/* Footer - Compact */}
-          <Section style={{ backgroundColor: mutedBg, padding: '12px 24px', textAlign: 'center' }}>
+          {/* Signature with Owner Photo */}
+          <Section style={{ padding: '20px 24px' }}>
+            <Row>
+              {images.ownerPhoto && (
+                <Column width={60}>
+                  <Img src={images.ownerPhoto} width={48} height={48} alt={company.owner} style={{ borderRadius: '50%' }} />
+                </Column>
+              )}
+              <Column>
+                <Text style={{ fontSize: '15px', fontWeight: 'bold', color: textColor, margin: 0 }}>{company.owner}</Text>
+                <Text style={{ fontSize: '13px', color: mutedColor, margin: 0 }}>{company.ownerTitle} · {company.name}</Text>
+              </Column>
+            </Row>
+          </Section>
+
+          {/* Footer */}
+          <Section style={{ backgroundColor: mutedBg, padding: '16px 24px', textAlign: 'center', borderTop: `1px solid ${colors.border}` }}>
             <Text style={{ fontSize: '12px', color: mutedColor, margin: 0 }}>
               {company.legalName} · {address.full} · <Link href={`tel:${contact.phone}`} style={{ color: primaryColor }}>{contact.phoneDisplay}</Link>
             </Text>
