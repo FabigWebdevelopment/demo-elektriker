@@ -4,11 +4,15 @@ import { FunnelSubmission, FunnelId } from '@/components/funnel/types'
 import { processLead } from '@/workflows/lead-processing'
 
 export async function POST(request: Request) {
+  console.log('=== FUNNEL-SUBMIT: Request received ===')
+
   try {
     const submission: FunnelSubmission = await request.json()
+    console.log('=== FUNNEL-SUBMIT: Parsed submission ===', JSON.stringify(submission, null, 2))
 
     // Validate required fields
     if (!submission.funnelId || !submission.contact?.email || !submission.contact?.name) {
+      console.log('=== FUNNEL-SUBMIT: Missing required fields ===')
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -23,6 +27,7 @@ export async function POST(request: Request) {
       'wallbox-anfrage',
     ]
     if (!validFunnelIds.includes(submission.funnelId)) {
+      console.log('=== FUNNEL-SUBMIT: Invalid funnel ID ===', submission.funnelId)
       return NextResponse.json(
         { error: 'Invalid funnel ID' },
         { status: 400 }
@@ -30,8 +35,21 @@ export async function POST(request: Request) {
     }
 
     // Start the lead processing workflow
-    // This runs asynchronously - doesn't block the response
-    await start(processLead, [submission])
+    console.log('=== FUNNEL-SUBMIT: Starting workflow ===')
+    console.log('processLead function:', typeof processLead)
+    console.log('start function:', typeof start)
+
+    try {
+      const workflowResult = await start(processLead, [submission])
+      console.log('=== FUNNEL-SUBMIT: Workflow started successfully ===')
+      console.log('Workflow result:', JSON.stringify(workflowResult, null, 2))
+    } catch (workflowError) {
+      console.error('=== FUNNEL-SUBMIT: Workflow start failed ===')
+      console.error('Workflow error:', workflowError)
+      console.error('Error message:', workflowError instanceof Error ? workflowError.message : String(workflowError))
+      console.error('Error stack:', workflowError instanceof Error ? workflowError.stack : 'No stack')
+      // Don't throw - still return success to user but log the error
+    }
 
     // Log for debugging
     console.log('=== LEAD WORKFLOW STARTED ===')
@@ -49,9 +67,12 @@ export async function POST(request: Request) {
       score: submission.scoring.totalScore,
     })
   } catch (error) {
-    console.error('Funnel submission error:', error)
+    console.error('=== FUNNEL-SUBMIT: Fatal error ===')
+    console.error('Error:', error)
+    console.error('Error message:', error instanceof Error ? error.message : String(error))
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
