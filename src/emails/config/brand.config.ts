@@ -68,6 +68,9 @@ export interface BrandConfig {
     followUp2Image: string
     followUp3Image: string
     hotLeadImage: string
+    // Icons for email buttons
+    phoneIcon: string
+    whatsappIcon: string
   }
 
   // Social
@@ -151,6 +154,9 @@ export const brandConfig: BrandConfig = {
     followUp2Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
     followUp3Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
     hotLeadImage: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
+    // Icons for email buttons
+    phoneIcon: `${SITE_URL}/images/icons/phone-white.svg`,
+    whatsappIcon: `${SITE_URL}/images/icons/whatsapp-white.svg`,
   },
 
   social: {

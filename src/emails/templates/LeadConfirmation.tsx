@@ -113,18 +113,28 @@ export const LeadConfirmation = ({
               <Text style={{ fontSize: '14px', color: mutedColor, margin: '0 0 12px 0' }}>
                 Du möchtest nicht warten?
               </Text>
-              <Button
-                href={`tel:${contact.phone}`}
-                style={{ backgroundColor: primaryColor, color: colors.primaryForeground, fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', marginRight: '8px' }}
-              >
-                📞 Anrufen
-              </Button>
-              <Button
-                href={`https://wa.me/${contact.whatsapp}`}
-                style={{ backgroundColor: '#25D366', color: '#ffffff', fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none' }}
-              >
-                💬 WhatsApp
-              </Button>
+              <table cellPadding="0" cellSpacing="0" border={0} style={{ margin: '0 auto' }}>
+                <tr>
+                  <td style={{ paddingRight: '8px' }}>
+                    <a
+                      href={`tel:${contact.phone}`}
+                      style={{ backgroundColor: primaryColor, color: colors.primaryForeground, fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}
+                    >
+                      <img src={images.phoneIcon} alt="" width="16" height="16" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+                      Anrufen
+                    </a>
+                  </td>
+                  <td>
+                    <a
+                      href={`https://wa.me/${contact.whatsapp}`}
+                      style={{ backgroundColor: '#25D366', color: '#ffffff', fontSize: '15px', fontWeight: 'bold', padding: '12px 24px', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}
+                    >
+                      <img src={images.whatsappIcon} alt="" width="16" height="16" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+                      WhatsApp
+                    </a>
+                  </td>
+                </tr>
+              </table>
             </Section>
           </Section>
 
