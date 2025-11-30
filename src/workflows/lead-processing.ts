@@ -5,7 +5,6 @@ import {
   renderFollowUp2,
   renderFollowUp3,
   renderOwnerNotification,
-  getEmailSender,
 } from "@/emails/render";
 
 // =============================================================================
@@ -72,6 +71,11 @@ const TWENTY_API_KEY = process.env.TWENTY_API_KEY || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const OWNER_EMAIL = process.env.NOTIFICATION_EMAIL || "thomas@fabig.website";
 const CRM_BASE_URL = process.env.TWENTY_CRM_BASE_URL || "https://crm.fabig-suite.de";
+
+// Customer-facing email sender (configurable per demo)
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || "Kundenservice";
+const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS || "info@fabig.website";
+const EMAIL_FROM = `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`;
 
 // Funnel display names and configuration
 const FUNNEL_CONFIG: Record<string, {
@@ -506,17 +510,29 @@ async function createNoteInCRM(
   const note = noteResult.data || noteResult;
 
   // Link note to opportunity via noteTarget
-  await fetch(`${apiUrl}/noteTargets`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${TWENTY_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      noteId: note.id,
-      opportunityId: opportunityId,
-    }),
-  });
+  try {
+    const linkResponse = await fetch(`${apiUrl}/noteTargets`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        noteId: note.id,
+        opportunityId: opportunityId,
+      }),
+    });
+
+    if (!linkResponse.ok) {
+      const errorText = await linkResponse.text();
+      console.error(`Failed to link note to opportunity: ${errorText}`);
+      // Don't throw - note was created, linking is secondary
+    } else {
+      console.log(`✅ Note linked to opportunity ${opportunityId}`);
+    }
+  } catch (error) {
+    console.error(`Error linking note to opportunity:`, error);
+  }
 
   return note;
 }
@@ -590,17 +606,29 @@ async function createTaskInCRM(
   const task = taskResult.data || taskResult;
 
   // Link task to opportunity via taskTarget
-  await fetch(`${apiUrl}/taskTargets`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${TWENTY_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      taskId: task.id,
-      opportunityId: opportunityId,
-    }),
-  });
+  try {
+    const linkResponse = await fetch(`${apiUrl}/taskTargets`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        taskId: task.id,
+        opportunityId: opportunityId,
+      }),
+    });
+
+    if (!linkResponse.ok) {
+      const errorText = await linkResponse.text();
+      console.error(`Failed to link task to opportunity: ${errorText}`);
+      // Don't throw - task was created, linking is secondary
+    } else {
+      console.log(`✅ Task linked to opportunity ${opportunityId}`);
+    }
+  } catch (error) {
+    console.error(`Error linking task to opportunity:`, error);
+  }
 
   return task;
 }
@@ -611,6 +639,9 @@ async function createTaskInCRM(
 
 /**
  * Send confirmation email to customer
+ *
+ * IMPORTANT: Uses verified fabig.website domain, not brandConfig
+ * brandConfig email domain may not be verified in Resend
  */
 async function sendCustomerConfirmationEmail(
   submission: LeadSubmission,
@@ -624,7 +655,6 @@ async function sendCustomerConfirmationEmail(
   }
 
   const { firstName } = parseName(submission.contact.name);
-  const sender = getEmailSender();
 
   const { html, subject } = await renderLeadConfirmation(
     {
@@ -641,20 +671,29 @@ async function sendCustomerConfirmationEmail(
     }
   );
 
-  await fetch("https://api.resend.com/emails", {
+  // Use verified fabig.website domain - brandConfig domain may not be verified!
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: sender.from,
+      from: EMAIL_FROM,
       to: submission.contact.email,
-      reply_to: sender.replyTo,
+      reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
     }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to send customer confirmation email: ${response.status} - ${errorText}`);
+    throw new Error(`Email send failed: ${response.status}`);
+  }
+
+  console.log(`✅ Customer confirmation email sent to ${submission.contact.email} from ${EMAIL_FROM}`);
 }
 
 /**
@@ -693,7 +732,7 @@ async function notifyOwner(
     opportunityLink
   );
 
-  await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
@@ -706,6 +745,14 @@ async function notifyOwner(
       html,
     }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to send owner notification: ${response.status} - ${errorText}`);
+    throw new Error(`Owner notification failed: ${response.status}`);
+  }
+
+  console.log(`✅ Owner notification sent to ${OWNER_EMAIL}`);
 }
 
 // =============================================================================
@@ -717,6 +764,8 @@ async function notifyOwner(
  * Checks CRM opportunity stage - if moved past NEW, skip follow-up
  */
 async function checkIfAlreadyContacted(opportunityId: string): Promise<boolean> {
+  "use step";
+
   const apiUrl = getTwentyApiUrl();
   if (!apiUrl || !TWENTY_API_KEY || opportunityId.startsWith("local_")) {
     return false;
@@ -765,7 +814,6 @@ async function sendFollowUp1(
   }
 
   const { firstName } = parseName(submission.contact.name);
-  const sender = getEmailSender();
 
   const { html, subject } = await renderFollowUp1(
     {
@@ -780,20 +828,27 @@ async function sendFollowUp1(
     }
   );
 
-  await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: sender.from,
+      from: EMAIL_FROM,
       to: submission.contact.email,
-      reply_to: sender.replyTo,
+      reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
     }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to send follow-up 1: ${response.status} - ${errorText}`);
+  } else {
+    console.log(`✅ Follow-up 1 sent to ${submission.contact.email}`);
+  }
 }
 
 /**
@@ -819,7 +874,6 @@ async function sendFollowUp2(
   }
 
   const { firstName } = parseName(submission.contact.name);
-  const sender = getEmailSender();
 
   const { html, subject } = await renderFollowUp2(
     {
@@ -834,20 +888,27 @@ async function sendFollowUp2(
     }
   );
 
-  await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: sender.from,
+      from: EMAIL_FROM,
       to: submission.contact.email,
-      reply_to: sender.replyTo,
+      reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
     }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to send follow-up 2: ${response.status} - ${errorText}`);
+  } else {
+    console.log(`✅ Follow-up 2 sent to ${submission.contact.email}`);
+  }
 }
 
 /**
@@ -873,7 +934,6 @@ async function sendFollowUp3(
   }
 
   const { firstName } = parseName(submission.contact.name);
-  const sender = getEmailSender();
 
   const { html, subject } = await renderFollowUp3(
     {
@@ -888,18 +948,25 @@ async function sendFollowUp3(
     }
   );
 
-  await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: sender.from,
+      from: EMAIL_FROM,
       to: submission.contact.email,
-      reply_to: sender.replyTo,
+      reply_to: EMAIL_FROM_ADDRESS,
       subject,
       html,
     }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to send follow-up 3: ${response.status} - ${errorText}`);
+  } else {
+    console.log(`✅ Follow-up 3 (final) sent to ${submission.contact.email}`);
+  }
 }
