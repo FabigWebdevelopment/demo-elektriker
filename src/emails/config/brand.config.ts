@@ -71,6 +71,9 @@ export interface BrandConfig {
     followUp2Image: string
     followUp3Image: string
     hotLeadImage: string
+    // Call tracking email images (themed for context)
+    missedCallImage: string
+    appointmentImage: string
     // Icons for email buttons
     phoneIcon: string
     whatsappIcon: string
@@ -157,6 +160,11 @@ export const brandConfig: BrandConfig = {
     followUp2Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
     followUp3Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
     hotLeadImage: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
+    // Call tracking email images (themed for context)
+    // missedCallImage: Owner on phone looking friendly/professional
+    // appointmentImage: Consultation/handshake scene
+    missedCallImage: `${SITE_URL}/images/email/missed-call-electrician.jpg`,
+    appointmentImage: `${SITE_URL}/images/email/appointment-electrician.jpg`,
     // Icons for email buttons (PNG for email client compatibility)
     phoneIcon: `${SITE_URL}/images/icons/phone-white.png`,
     whatsappIcon: `${SITE_URL}/images/icons/whatsapp-white.png`,
