@@ -230,7 +230,10 @@ export async function POST(request: Request) {
       )
       if (personResponse.ok) {
         const personData = await personResponse.json()
-        person = (personData.data || personData) as TwentyPerson
+
+        // Twenty CRM REST API wraps response in { data: { person: {...} } } or similar
+        const rawPerson = personData.data?.person || personData.data || personData.person || personData
+        person = rawPerson as TwentyPerson
 
         // Log person data structure for debugging
         console.log(`Person data structure:`, JSON.stringify(person, null, 2).slice(0, 500))
