@@ -57,7 +57,9 @@ interface CallStatusWebhookPayload {
 interface TwentyPerson {
   id: string
   name: { firstName: string; lastName: string }
-  emails: { primaryEmail: string }
+  // Twenty CRM may return emails in different formats
+  emails?: { primaryEmail?: string } | string
+  email?: string // Alternative field name
   phones?: { primaryPhoneNumber: string }
 }
 
@@ -92,6 +94,39 @@ function extractCreatedEntity(responseData: Record<string, unknown>): Record<str
   if (data.id) {
     return data
   }
+  return null
+}
+
+/**
+ * Extract email from person object - handles different Twenty CRM response formats
+ */
+function extractPersonEmail(person: TwentyPerson | null): string | null {
+  if (!person) return null
+
+  // Try different possible email field structures
+  // 1. emails.primaryEmail (expected format)
+  if (typeof person.emails === 'object' && person.emails?.primaryEmail) {
+    return person.emails.primaryEmail
+  }
+
+  // 2. emails as string directly
+  if (typeof person.emails === 'string' && person.emails) {
+    return person.emails
+  }
+
+  // 3. email field (alternative)
+  if (person.email) {
+    return person.email
+  }
+
+  // 4. Check for any email-like field in the object
+  const personObj = person as unknown as Record<string, unknown>
+  for (const [key, value] of Object.entries(personObj)) {
+    if (key.toLowerCase().includes('email') && typeof value === 'string' && value.includes('@')) {
+      return value
+    }
+  }
+
   return null
 }
 
@@ -187,6 +222,7 @@ export async function POST(request: Request) {
 
     // Fetch person details for email
     let person: TwentyPerson | null = null
+    let personEmail: string | null = null
     if (personId) {
       const personResponse = await fetch(
         `${apiUrl}/people/${personId}`,
@@ -195,6 +231,15 @@ export async function POST(request: Request) {
       if (personResponse.ok) {
         const personData = await personResponse.json()
         person = (personData.data || personData) as TwentyPerson
+
+        // Log person data structure for debugging
+        console.log(`Person data structure:`, JSON.stringify(person, null, 2).slice(0, 500))
+
+        // Extract email using helper that handles different formats
+        personEmail = extractPersonEmail(person)
+        console.log(`Extracted email: ${personEmail}`)
+      } else {
+        console.error(`Failed to fetch person ${personId}: ${personResponse.status}`)
       }
     }
 
@@ -206,7 +251,7 @@ export async function POST(request: Request) {
       emailSent: false,
       emailSkipReason: null as string | null,
       personFound: !!person,
-      personEmail: person?.emails?.primaryEmail || null,
+      personEmail: personEmail,
     }
 
     switch (anrufStatus) {
@@ -339,13 +384,14 @@ async function handleNichtErreicht(
     return { sent: false, skipReason: 'Person not found in CRM' }
   }
 
-  if (!person.emails?.primaryEmail) {
-    console.log('Person has no primaryEmail, skipping email')
+  // Use helper to extract email from various possible formats
+  const email = extractPersonEmail(person)
+  if (!email) {
+    console.log('Person has no email address (checked all formats), skipping email')
     return { sent: false, skipReason: 'Person has no email address' }
   }
 
   const firstName = person.name?.firstName || 'Kunde'
-  const email = person.emails.primaryEmail
 
   console.log(`Sending missed call email #${attemptNumber} to ${email}...`)
 
@@ -445,12 +491,14 @@ async function handleTerminVereinbart(
     return { sent: false, skipReason: 'Person not found in CRM' }
   }
 
-  if (!person.emails?.primaryEmail) {
-    console.log('Person has no primaryEmail, skipping email')
+  // Use helper to extract email from various possible formats
+  const email = extractPersonEmail(person)
+  if (!email) {
+    console.log('Person has no email address (checked all formats), skipping email')
     return { sent: false, skipReason: 'Person has no email address' }
   }
 
-  console.log('Sending appointment confirmation email...')
+  console.log(`Sending appointment confirmation email to ${email}...`)
 
   const formattedDate = formatGermanDate(terminDatum)
   const formattedTime = terminUhrzeit ? `${terminUhrzeit} Uhr` : undefined
@@ -466,7 +514,7 @@ async function handleTerminVereinbart(
       },
       body: JSON.stringify({
         from: EMAIL_FROM,
-        to: person.emails.primaryEmail,
+        to: email,
         bcc: brandConfig.email.fromEmail,
         reply_to: EMAIL_REPLY_TO,
         subject,
@@ -475,12 +523,12 @@ async function handleTerminVereinbart(
     })
 
     if (emailResponse.ok) {
-      console.log(`✅ Appointment confirmation sent to ${person.emails.primaryEmail}`)
+      console.log(`✅ Appointment confirmation sent to ${email}`)
 
       // Create note (only if email was sent)
       if (opportunityId) {
         const timeStr = terminUhrzeit ? ` um ${terminUhrzeit} Uhr` : ''
-        await createNote(apiUrl, opportunityId, `📅 Termin vereinbart`, `Termin am ${formattedDate}${timeStr}. Bestätigung an ${person.emails.primaryEmail} gesendet.`)
+        await createNote(apiUrl, opportunityId, `📅 Termin vereinbart`, `Termin am ${formattedDate}${timeStr}. Bestätigung an ${email} gesendet.`)
       }
 
       return { sent: true, skipReason: null }
