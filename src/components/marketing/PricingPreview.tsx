@@ -61,8 +61,14 @@ export function PricingCard({
 
       {/* Price */}
       <div className="mb-6">
+        {tier.hasAddOns && (
+          <span className="text-sm text-muted-foreground mr-1">ab</span>
+        )}
         <span className="text-4xl font-bold text-foreground">€{tier.price}</span>
         <span className="text-muted-foreground">/Monat</span>
+        {tier.addOnsNote && (
+          <p className="text-xs text-muted-foreground mt-1">{tier.addOnsNote}</p>
+        )}
       </div>
 
       {/* Features */}
@@ -146,7 +152,10 @@ export function PricingCompact({
           )}
         >
           <span className="text-sm font-medium">{tier.name}</span>
-          <span className="text-sm font-bold text-primary">€{tier.price}</span>
+          <span className="text-sm font-bold text-primary">
+            {tier.hasAddOns && <span className="font-normal text-muted-foreground">ab </span>}
+            €{tier.price}
+          </span>
           {tier.badge && (
             <Badge variant="secondary" className="text-xs">
               {tier.badge}

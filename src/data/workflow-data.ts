@@ -234,11 +234,11 @@ export const featureItems: FeatureItem[] = [
     highlight: 'Echtzeit-Alerts',
   },
   {
-    id: 'tracking',
+    id: 'followup',
     icon: RefreshCw,
-    title: 'Call-Tracking',
+    title: 'Follow-Up System',
     description:
-      'Verpasste Anrufe? Automatische E-Mails an den Kunden. Kein Lead wird vergessen.',
+      'Kunde nicht erreicht? Ein Klick im CRM startet automatische Follow-Up E-Mails. Kein Lead wird vergessen.',
     highlight: '3 Kontaktversuche',
   },
 ]
@@ -254,6 +254,8 @@ export interface PricingTier {
   features: string[]
   highlighted?: boolean
   badge?: string
+  hasAddOns?: boolean // Shows "ab" prefix when true
+  addOnsNote?: string // Optional note about available add-ons
 }
 
 export const pricingTiers: PricingTier[] = [
@@ -279,7 +281,7 @@ export const pricingTiers: PricingTier[] = [
       'Volle CRM-Funktionen',
       '3-stufige Follow-up Sequenz',
       '12 Branchenverzeichnisse',
-      'Call-Tracking E-Mails',
+      'Lead-Qualifizierung',
     ],
     highlighted: true,
     badge: 'Beliebt',
@@ -294,14 +296,16 @@ export const pricingTiers: PricingTier[] = [
       'WhatsApp-Benachrichtigungen',
       'SMS-Integration',
       'Custom Funnels',
-      'n8n Automationen',
+      'Erweiterte Automationen',
     ],
+    hasAddOns: true,
+    addOnsNote: 'Zusätzliche Automationen buchbar',
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
     price: 1499,
-    description: 'Maximale Sichtbarkeit',
+    description: 'Maximale Sichtbarkeit & Kontrolle',
     features: [
       '50+ Seiten',
       'Multi-Standort Support',
@@ -310,6 +314,8 @@ export const pricingTiers: PricingTier[] = [
       'Dedizierter Manager',
     ],
     badge: 'Premium',
+    hasAddOns: true,
+    addOnsNote: 'Call-Tracking & komplexe Automationen optional',
   },
 ]
 
