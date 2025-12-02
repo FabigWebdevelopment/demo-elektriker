@@ -144,6 +144,68 @@ function formatGermanDate(isoDate: string): string {
   })
 }
 
+/**
+ * Generate ICS calendar file content for appointment
+ * This allows customers to add the appointment to their calendar
+ */
+function generateICSFile(
+  appointmentDate: string,
+  appointmentTime: string | undefined,
+  customerName: string,
+  companyName: string,
+  companyPhone: string,
+  companyAddress: string
+): string {
+  // Parse date and time
+  const startDate = new Date(appointmentDate)
+  if (appointmentTime) {
+    const [hours, minutes] = appointmentTime.split(':').map(Number)
+    startDate.setHours(hours, minutes, 0, 0)
+  } else {
+    startDate.setHours(10, 0, 0, 0) // Default 10:00
+  }
+
+  // End time: 1 hour after start
+  const endDate = new Date(startDate)
+  endDate.setHours(endDate.getHours() + 1)
+
+  // Format dates for ICS (YYYYMMDDTHHMMSS)
+  const formatICSDate = (date: Date): string => {
+    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  }
+
+  // Generate unique ID
+  const uid = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}@fabig-suite.de`
+
+  // Build ICS content
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Fabig Business Suite//Appointment//DE',
+    'CALSCALE:GREGORIAN',
+    'METHOD:REQUEST',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${formatICSDate(new Date())}`,
+    `DTSTART:${formatICSDate(startDate)}`,
+    `DTEND:${formatICSDate(endDate)}`,
+    `SUMMARY:Termin bei ${companyName}`,
+    `DESCRIPTION:Ihr Termin bei ${companyName}\\n\\nBei Fragen erreichen Sie uns unter ${companyPhone}`,
+    `LOCATION:${companyAddress.replace(/,/g, '\\,')}`,
+    `ORGANIZER;CN=${companyName}:mailto:${brandConfig.email.fromEmail}`,
+    'STATUS:CONFIRMED',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT1H',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:Erinnerung: Termin bei ${companyName} in 1 Stunde`,
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+
+  return icsContent
+}
+
 // =============================================================================
 // MAIN HANDLER
 // =============================================================================
@@ -527,6 +589,19 @@ async function handleTerminVereinbart(
 
   const { html, subject } = await renderAppointmentConfirmation(firstName, formattedDate, formattedTime)
 
+  // Generate ICS calendar file for customer to add to their calendar
+  const icsContent = generateICSFile(
+    terminDatum,
+    terminUhrzeit,
+    customerName,
+    brandConfig.company.name,
+    brandConfig.contact.phoneDisplay,
+    brandConfig.address.full
+  )
+
+  // Convert ICS to base64 for email attachment
+  const icsBase64 = Buffer.from(icsContent).toString('base64')
+
   try {
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -541,6 +616,13 @@ async function handleTerminVereinbart(
         reply_to: EMAIL_REPLY_TO,
         subject,
         html,
+        attachments: [
+          {
+            filename: 'termin.ics',
+            content: icsBase64,
+            content_type: 'text/calendar; method=REQUEST',
+          },
+        ],
       }),
     })
 
