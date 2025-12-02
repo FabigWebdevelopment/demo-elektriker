@@ -204,12 +204,24 @@ async function sendProposalFollowUp(
 
 export async function POST(request: Request) {
   try {
-    const payload: TwentyWebhookPayload = await request.json()
+    const payload = await request.json()
 
     console.log('=== TWENTY WEBHOOK ===')
-    console.log(`Event: ${payload.event}`)
-    console.log(`Opportunity: ${payload.data.name}`)
-    console.log(`Stage: ${payload.data.stage}`)
+    console.log(`Event: ${payload.event || 'unknown'}`)
+    console.log(`Payload keys: ${Object.keys(payload).join(', ')}`)
+
+    // Validate payload structure
+    if (!payload.event || !payload.data) {
+      console.log('Invalid payload structure, ignoring')
+      return NextResponse.json({
+        received: true,
+        action: 'ignored',
+        reason: 'Invalid payload - missing event or data',
+      })
+    }
+
+    console.log(`Opportunity: ${payload.data.name || 'unknown'}`)
+    console.log(`Stage: ${payload.data.stage || 'unknown'}`)
     console.log('======================')
 
     // Only process opportunity updates
@@ -217,7 +229,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         received: true,
         action: 'ignored',
-        reason: 'Event ist nicht opportunity.updated',
+        reason: `Event ist ${payload.event}, nicht opportunity.updated`,
       })
     }
 
