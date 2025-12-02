@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify({
               name: `${funnelName} - ${lastName || firstName}`,
-              stage: classification === 'hot' ? 'IN_BEARBEITUNG' : 'NEUE_ANFRAGE',
+              stage: 'NEUE_ANFRAGE',
               pointOfContactId: person.data?.id || person.id,
             }),
           })

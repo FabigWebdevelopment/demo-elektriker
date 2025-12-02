@@ -115,8 +115,8 @@ const CLASSIFICATION_PROBABILITY: Record<string, number> = {
   nurture: 10,
 };
 
-// Classification to CRM stage mapping (matches German CRM setup from OpenAPI)
-// Valid stages: NEUE_ANFRAGE, IN_BEARBEITUNG, TERMIN_VEREINBART, ANGEBOT_GESENDET, KUNDE_GEWONNEN
+// Classification to CRM stage mapping (matches German CRM setup)
+// Valid stages: NEUE_ANFRAGE, FOLLOW_UP, TERMIN_VEREINBART, KUNDE_GEWONNEN, VERLOREN
 const CLASSIFICATION_STAGE: Record<string, string> = {
   hot: "NEUE_ANFRAGE",       // Hot leads start as new, urgency field handles priority
   warm: "NEUE_ANFRAGE",      // Neue Anfrage
@@ -803,26 +803,63 @@ async function createTaskInCRM(
   const customerName = lastName ? `${firstName} ${lastName}` : firstName;
   const emoji = getClassificationEmoji(classification);
 
+  // Format phone for tel: link (international format)
+  const phoneForLink = submission.contact.phone
+    ? submission.contact.phone.replace(/[^\d+]/g, "").replace(/^0/, "+49")
+    : "";
+  const phoneDisplay = submission.contact.phone || "Keine Telefonnummer";
+
+  // Priority label based on classification
+  const priorityLabel = {
+    hot: "🔥 PRIORITÄT: HOCH - Sofort anrufen!",
+    warm: "📞 PRIORITÄT: MITTEL - Heute anrufen",
+    potential: "📋 PRIORITÄT: NORMAL - Diese Woche anrufen",
+    nurture: "🌱 PRIORITÄT: NIEDRIG - Bei Gelegenheit",
+  }[classification] || "📋 Lead kontaktieren";
+
   const taskData = {
     title: `${emoji} Rückruf: ${customerName} - ${funnelName}`,
     status: "TODO",
     dueAt: getTaskDueDate(classification),
     // Assign task to default workspace member
     assigneeId: DEFAULT_ASSIGNEE_ID,
+    // Custom field for call tracking
+    anrufStatus: "NEU",
     bodyV2: {
       markdown: [
-        `## Lead-Details`,
-        `- **Name:** ${customerName}`,
-        `- **Telefon:** ${submission.contact.phone}`,
-        `- **E-Mail:** ${submission.contact.email}`,
-        `- **Score:** ${totalScore}/100 (${classification.toUpperCase()})`,
+        `# ☎️ JETZT ANRUFEN`,
         ``,
-        `## Aktion`,
+        `## [📱 ${phoneDisplay}](tel:${phoneForLink})`,
+        `*(Auf Mobilgerät: Tippen zum Anrufen)*`,
+        ``,
+        `---`,
+        ``,
+        `## Lead-Details`,
+        `| | |`,
+        `|---|---|`,
+        `| **Name** | ${customerName} |`,
+        `| **E-Mail** | ${submission.contact.email} |`,
+        `| **Score** | ${totalScore}/100 (${classification.toUpperCase()}) |`,
+        `| **Funnel** | ${funnelName} |`,
+        ``,
+        `---`,
+        ``,
+        `## ${priorityLabel}`,
+        ``,
         classification === "hot"
-          ? "🔥 **SOFORT anrufen!** Heißer Lead mit hohem Interesse."
+          ? "> 🔥 **Heißer Lead!** Sofortiges Interesse signalisiert. Innerhalb von 1 Stunde anrufen für beste Abschlussrate."
           : classification === "warm"
-          ? "📞 Innerhalb von 24h anrufen. Gutes Interesse vorhanden."
-          : "📋 Lead kontaktieren und Interesse qualifizieren.",
+          ? "> 📞 **Warmer Lead.** Gutes Interesse vorhanden. Heute noch Kontakt aufnehmen."
+          : "> 📋 **Lead qualifizieren.** Interesse und Bedarf im Gespräch ermitteln.",
+        ``,
+        `---`,
+        ``,
+        `### Nach dem Anruf:`,
+        `Ändere den **Anruf-Status** oben:`,
+        `- 📵 "Nicht erreicht (1/2/3)" → Kunde erhält E-Mail`,
+        `- ✅ "Erreicht" → Gespräch geführt`,
+        `- 📅 "Termin vereinbart" → Termin-Datum ausfüllen!`,
+        `- ❌ "Kein Interesse" → Lead abgeschlossen`,
       ].join("\n"),
       blocknote: null,
     },
