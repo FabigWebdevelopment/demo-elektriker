@@ -43,15 +43,17 @@ type AnrufStatus =
 interface CallStatusWebhookPayload {
   taskId: string
   anrufStatus: AnrufStatus
-  // New: Single DateTime field from Twenty CRM form
-  terminDateTime?: string // ISO format: 2024-12-15T14:00:00
-  // Legacy: Separate date/time fields (backwards compatibility)
+  // Single combined field: "15.12.2024 14:00" or "2024-12-15 14:00"
+  termin?: string
+  // Legacy fields (backwards compatibility)
+  terminDateTime?: string
   terminDatum?: string
   terminUhrzeit?: string
   // Twenty CRM might send the full task object
   record?: {
     id: string
     anrufStatus: AnrufStatus
+    termin?: string
     terminDateTime?: string
     terminDatum?: string
     terminUhrzeit?: string
@@ -221,16 +223,37 @@ export async function POST(request: Request) {
     const taskId = payload.taskId || payload.record?.id
     const anrufStatus = payload.anrufStatus || payload.record?.anrufStatus
 
-    // Handle terminDateTime (new single field) or legacy separate fields
+    // Parse termin field - supports multiple formats:
+    // 1. "termin": "15.12.2024 14:00" (German format from form)
+    // 2. "termin": "2024-12-15 14:00" (ISO-ish format)
+    // 3. "terminDateTime": "2024-12-15T14:00:00" (ISO format)
+    // 4. "terminDatum" + "terminUhrzeit" (legacy separate fields)
+    const termin = payload.termin || payload.record?.termin
     const terminDateTime = payload.terminDateTime || payload.record?.terminDateTime
     let terminDatum: string | undefined
     let terminUhrzeit: string | undefined
 
-    if (terminDateTime) {
+    if (termin) {
+      // Parse combined field: "15.12.2024 14:00" or "2024-12-15 14:00"
+      const parts = termin.trim().split(/[\sT]+/) // Split on space or T
+      const datePart = parts[0]
+      const timePart = parts[1] || '10:00'
+
+      // Check if German format (DD.MM.YYYY)
+      if (datePart.includes('.')) {
+        const [day, month, year] = datePart.split('.')
+        terminDatum = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+      } else {
+        // Already ISO format (YYYY-MM-DD)
+        terminDatum = datePart
+      }
+      terminUhrzeit = timePart.slice(0, 5) // Ensure HH:MM format
+      console.log(`Parsed termin: "${termin}" → date: ${terminDatum}, time: ${terminUhrzeit}`)
+    } else if (terminDateTime) {
       // Parse ISO datetime: 2024-12-15T14:00:00
       const dt = new Date(terminDateTime)
-      terminDatum = dt.toISOString().split('T')[0] // 2024-12-15
-      terminUhrzeit = dt.toTimeString().slice(0, 5) // 14:00
+      terminDatum = dt.toISOString().split('T')[0]
+      terminUhrzeit = dt.toTimeString().slice(0, 5)
       console.log(`Parsed terminDateTime: ${terminDateTime} → date: ${terminDatum}, time: ${terminUhrzeit}`)
     } else {
       // Fallback to legacy separate fields
@@ -381,7 +404,7 @@ export async function POST(request: Request) {
       case 'TERMIN': {
         if (!terminDatum) {
           return NextResponse.json(
-            { error: 'terminDateTime (or terminDatum) required for TERMIN status' },
+            { error: 'termin field required for TERMIN status (format: "15.12.2024 14:00")' },
             { status: 400 }
           )
         }
@@ -704,7 +727,7 @@ export async function GET() {
     ],
     payloadFields: {
       required: ['taskId', 'anrufStatus'],
-      forTermin: 'terminDateTime (ISO format: 2024-12-15T14:00:00)',
+      forTermin: 'termin (format: "15.12.2024 14:00" or "2024-12-15 14:00")',
       legacy: 'terminDatum + terminUhrzeit (still supported)',
     },
     opportunityStages: [

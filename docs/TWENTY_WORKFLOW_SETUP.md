@@ -149,8 +149,10 @@ Body:
 
 **Form Step:**
 - Titel: `Termin-Details`
-- Feld: `terminDateTime` (DateTime, Required)
-  - Label: `Termin Datum & Uhrzeit`
+- Feld: `termin` (Text, Required)
+  - Label: `Termin (Datum + Uhrzeit)`
+  - Placeholder: `15.12.2024 14:00`
+  - Note: Format immer TT.MM.JJJJ HH:MM
 
 **Aktion: HTTP Request**
 ```
@@ -164,7 +166,7 @@ Body:
 {
   "taskId": "{{record.id}}",
   "anrufStatus": "TERMIN",
-  "terminDateTime": "{{form.terminDateTime}}"
+  "termin": "{{form.termin}}"
 }
 ```
 
@@ -193,9 +195,11 @@ Body:
 1. Task auswählen
 2. **Cmd+K** (oder Rechtsklick → Workflows)
 3. `📅 Termin buchen` wählen
-4. **Datum & Uhrzeit** im Formular eingeben
+4. **Termin eingeben** im Format: `15.12.2024 14:00`
 5. **Absenden**
-6. **Automatisch:** Kalender-Event + Bestätigungs-E-Mail an Kunden
+6. **Automatisch:**
+   - Kalender-Event im CRM erstellt
+   - Bestätigungs-E-Mail an Kunden (mit .ics Kalender-Datei zum Hinzufügen)
 
 ---
 
