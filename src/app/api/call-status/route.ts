@@ -43,12 +43,16 @@ type AnrufStatus =
 interface CallStatusWebhookPayload {
   taskId: string
   anrufStatus: AnrufStatus
+  // New: Single DateTime field from Twenty CRM form
+  terminDateTime?: string // ISO format: 2024-12-15T14:00:00
+  // Legacy: Separate date/time fields (backwards compatibility)
   terminDatum?: string
   terminUhrzeit?: string
   // Twenty CRM might send the full task object
   record?: {
     id: string
     anrufStatus: AnrufStatus
+    terminDateTime?: string
     terminDatum?: string
     terminUhrzeit?: string
   }
@@ -154,8 +158,23 @@ export async function POST(request: Request) {
     // Extract data - handle both direct and nested formats
     const taskId = payload.taskId || payload.record?.id
     const anrufStatus = payload.anrufStatus || payload.record?.anrufStatus
-    const terminDatum = payload.terminDatum || payload.record?.terminDatum
-    const terminUhrzeit = payload.terminUhrzeit || payload.record?.terminUhrzeit
+
+    // Handle terminDateTime (new single field) or legacy separate fields
+    const terminDateTime = payload.terminDateTime || payload.record?.terminDateTime
+    let terminDatum: string | undefined
+    let terminUhrzeit: string | undefined
+
+    if (terminDateTime) {
+      // Parse ISO datetime: 2024-12-15T14:00:00
+      const dt = new Date(terminDateTime)
+      terminDatum = dt.toISOString().split('T')[0] // 2024-12-15
+      terminUhrzeit = dt.toTimeString().slice(0, 5) // 14:00
+      console.log(`Parsed terminDateTime: ${terminDateTime} → date: ${terminDatum}, time: ${terminUhrzeit}`)
+    } else {
+      // Fallback to legacy separate fields
+      terminDatum = payload.terminDatum || payload.record?.terminDatum
+      terminUhrzeit = payload.terminUhrzeit || payload.record?.terminUhrzeit
+    }
 
     if (!taskId || !anrufStatus) {
       return NextResponse.json(
@@ -300,7 +319,7 @@ export async function POST(request: Request) {
       case 'TERMIN': {
         if (!terminDatum) {
           return NextResponse.json(
-            { error: 'terminDatum required for TERMIN status' },
+            { error: 'terminDateTime (or terminDatum) required for TERMIN status' },
             { status: 400 }
           )
         }
@@ -598,9 +617,14 @@ export async function GET() {
       'NICHT_ERREICHT_1 → Email #1 + FOLLOW_UP',
       'NICHT_ERREICHT_2 → Email #2',
       'NICHT_ERREICHT_3 → Email #3 + VERLOREN',
-      'TERMIN → Calendar + Email + TERMIN_VEREINBART',
+      'TERMIN → Calendar + Email + TERMIN_VEREINBART (requires terminDateTime)',
       'KEIN_INTERESSE → VERLOREN',
     ],
+    payloadFields: {
+      required: ['taskId', 'anrufStatus'],
+      forTermin: 'terminDateTime (ISO format: 2024-12-15T14:00:00)',
+      legacy: 'terminDatum + terminUhrzeit (still supported)',
+    },
     opportunityStages: [
       'NEUE_ANFRAGE (initial)',
       'FOLLOW_UP (emails sent)',

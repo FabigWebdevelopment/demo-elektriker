@@ -4,30 +4,22 @@ Diese Anleitung beschreibt das **einfache Anruf-Tracking System** für Twenty CR
 
 ## Das Prinzip
 
-**Ein Task. Ein Status-Dropdown. Automatische E-Mails & Stage-Updates.**
+**Zwei Workflows. Ein Status-Dropdown. Automatische E-Mails & Stage-Updates.**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        EINFACHES ANRUF-TRACKING                             │
+│                        ANRUF-TRACKING SYSTEM                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  TASK: "📞 Rückruf: Max Müller"                                             │
+│  WORKFLOW 1: Status-Änderungen (Automatisch)                                │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │  Anruf-Status: [📋 Neu ▼]                                              │ │
-│  │                                                                        │ │
-│  │  📱 +49 157 1234567  ← Klicken zum Anrufen                            │ │
-│  │                                                                        │ │
-│  │  Nach dem Anruf: Status ändern!                                        │ │
+│  │  📵 Nicht erreicht (1/2/3) → E-Mail an Kunden                          │ │
+│  │  ❌ Kein Interesse         → Stage → VERLOREN                          │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │                                                                              │
-│  STATUS-OPTIONEN:                                                            │
+│  WORKFLOW 2: Termin buchen (Manuell via Cmd+K)                              │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │  📋 Neu                    → Noch nicht angerufen                      │ │
-│  │  📵 Nicht erreicht (1)     → E-Mail #1, Stage → FOLLOW_UP              │ │
-│  │  📵 Nicht erreicht (2)     → E-Mail #2                                 │ │
-│  │  📵 Nicht erreicht (3)     → E-Mail #3, Stage → VERLOREN               │ │
-│  │  📅 Termin vereinbart      → Kalender + E-Mail, Stage → TERMIN         │ │
-│  │  ❌ Kein Interesse         → Stage → VERLOREN                          │ │
+│  │  📅 Termin buchen          → Formular (Datum/Zeit) → Kalender + E-Mail │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -105,16 +97,26 @@ Die Stages wurden auf 5 reduziert:
 - KUNDE_GEWONNEN
 - VERLOREN
 
-### Schritt 3: Workflow erstellen
+### Schritt 3: Workflows erstellen
+
+Du brauchst **zwei Workflows** - einen für automatische Status-Änderungen, einen für Terminbuchungen.
+
+---
+
+#### Workflow 1: Status-Änderungen (Automatisch)
 
 1. Twenty CRM → **Settings** → **Workflows**
 2. **+ New Workflow**
-3. Name: `📞 Anruf-Status Webhook`
+3. Name: `📞 Anruf-Status (Auto)`
 
 **Trigger:**
 - Typ: `Record Updated`
 - Objekt: `Task`
 - Bedingung: `anrufStatus` geändert
+
+**Condition Step:**
+- Bedingung: `anrufStatus != TERMIN`
+- (Nur weitermachen wenn NICHT Termin - Termin wird separat behandelt)
 
 **Aktion: HTTP Request**
 ```
@@ -127,9 +129,42 @@ Headers:
 Body:
 {
   "taskId": "{{record.id}}",
-  "anrufStatus": "{{record.anrufStatus}}",
-  "terminDatum": "{{record.terminDatum}}",
-  "terminUhrzeit": "{{record.terminUhrzeit}}"
+  "anrufStatus": "{{record.anrufStatus}}"
+}
+```
+
+4. **Save** und **Activate**
+
+---
+
+#### Workflow 2: Termin buchen (Manuell)
+
+1. **+ New Workflow**
+2. Name: `📅 Termin buchen`
+
+**Trigger:**
+- Typ: `Manual`
+- Objekt: `Task`
+- (Erscheint im Cmd+K Menü wenn Task ausgewählt)
+
+**Form Step:**
+- Titel: `Termin-Details`
+- Feld: `terminDateTime` (DateTime, Required)
+  - Label: `Termin Datum & Uhrzeit`
+
+**Aktion: HTTP Request**
+```
+Method: POST
+URL: https://elektriker.fabig-suite.de/api/call-status
+
+Headers:
+  Content-Type: application/json
+
+Body:
+{
+  "taskId": "{{record.id}}",
+  "anrufStatus": "TERMIN",
+  "terminDateTime": "{{form.terminDateTime}}"
 }
 ```
 
@@ -143,22 +178,24 @@ Body:
 
 1. **Task öffnen** → Telefonnummer und Lead-Details sehen
 2. **Anrufen** → Auf Telefon-Link klicken
-3. **Status ändern:**
+3. **Nach dem Anruf:**
 
-| Situation | Status wählen |
-|-----------|---------------|
-| Niemand dran | "Nicht erreicht (1)" |
-| 2. Versuch, niemand dran | "Nicht erreicht (2)" |
-| 3. Versuch, niemand dran | "Nicht erreicht (3)" |
-| Termin ausgemacht | **Erst Datum eintragen!** Dann "Termin vereinbart" |
-| Kein Interesse | "Kein Interesse" |
+| Situation | Aktion |
+|-----------|--------|
+| Niemand dran | Status → "Nicht erreicht (1)" |
+| 2. Versuch, niemand dran | Status → "Nicht erreicht (2)" |
+| 3. Versuch, niemand dran | Status → "Nicht erreicht (3)" |
+| Kein Interesse | Status → "Kein Interesse" |
+| **Termin ausgemacht** | **Cmd+K → "Termin buchen"** |
 
-### Bei Termin:
+### Bei Termin (Cmd+K Workflow):
 
-1. `Termin-Datum` Feld ausfüllen
-2. Optional: `Termin-Uhrzeit` ausfüllen (z.B. "14:00")
-3. Status auf "📅 Termin vereinbart" setzen
-4. **Automatisch:** Kalender-Event + Bestätigungs-E-Mail an Kunden
+1. Task auswählen
+2. **Cmd+K** (oder Rechtsklick → Workflows)
+3. `📅 Termin buchen` wählen
+4. **Datum & Uhrzeit** im Formular eingeben
+5. **Absenden**
+6. **Automatisch:** Kalender-Event + Bestätigungs-E-Mail an Kunden
 
 ---
 
