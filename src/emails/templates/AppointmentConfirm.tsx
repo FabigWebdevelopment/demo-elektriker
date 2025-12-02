@@ -25,8 +25,8 @@ interface AppointmentConfirmProps {
 /**
  * Appointment Confirmation Email
  *
- * Enterprise-level design matching LeadConfirmation standard.
- * Success-themed with green accents for positive reinforcement.
+ * Enterprise-level design with electrician-themed gamification.
+ * Success-themed - "Der Stromkreis ist geschlossen!"
  */
 export const AppointmentConfirm = ({
   firstName = 'Max',
@@ -54,16 +54,16 @@ export const AppointmentConfirm = ({
   ]
 
   const processSteps = [
-    'Wir rufen Sie kurz vorher an, um den Termin zu bestätigen',
-    'Unser Techniker kommt pünktlich zu Ihnen',
-    'Gemeinsam besprechen wir Ihr Projekt vor Ort',
-    'Sie erhalten ein transparentes Angebot',
+    { icon: '📞', text: 'Wir rufen kurz vorher an, um den Termin zu bestätigen' },
+    { icon: '🚗', text: 'Unser Techniker kommt pünktlich zu Ihnen' },
+    { icon: '🔍', text: 'Gemeinsame Begehung und Projektbesprechung' },
+    { icon: '📋', text: 'Sie erhalten ein transparentes Festpreis-Angebot' },
   ]
 
   return (
     <Html>
       <Head />
-      <Preview>Ihr Termin am {appointmentDate} ist bestätigt! - {company.name}</Preview>
+      <Preview>Der Stromkreis ist geschlossen! Termin am {appointmentDate} - {company.name}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* Header */}
@@ -82,7 +82,7 @@ export const AppointmentConfirm = ({
             </Row>
           </Section>
 
-          {/* Hero Image - themed for appointment */}
+          {/* Hero Image */}
           <Section style={{ padding: 0 }}>
             <Img
               src={images.appointmentImage}
@@ -94,27 +94,31 @@ export const AppointmentConfirm = ({
 
           {/* Main Content */}
           <Section style={styles.content}>
-            {/* Success Badge */}
+            {/* Success Badge - Gamified */}
             <Section style={styles.successBadge}>
-              <Text style={styles.successText}>✓ Termin bestätigt</Text>
+              <Text style={styles.successText}>⚡ Stromkreis geschlossen!</Text>
             </Section>
 
-            <Text style={styles.greeting}>Wir freuen uns auf Sie, {firstName}!</Text>
+            <Text style={styles.greeting}>Perfekt, {firstName}!</Text>
             <Text style={styles.intro}>
-              Vielen Dank für Ihr Vertrauen! Ihr Termin mit {company.name} wurde erfolgreich bestätigt.
+              Die Verbindung steht! Ihr Beratungstermin mit {company.name} ist eingetragen und wir freuen uns darauf, Ihr Projekt zu besprechen.
             </Text>
 
-            {/* Appointment Details Box */}
+            {/* Appointment Details Box - Styled like a circuit board */}
             <Section style={styles.appointmentBox}>
+              <Text style={styles.appointmentIcon}>📅</Text>
               <Text style={styles.appointmentLabel}>IHR TERMIN</Text>
               <Text style={styles.appointmentDate}>{appointmentDate}</Text>
               {appointmentTime && (
                 <Text style={styles.appointmentTime}>{appointmentTime}</Text>
               )}
+              <Text style={styles.appointmentNote}>
+                ✓ Im Kalender eingetragen
+              </Text>
             </Section>
 
-            {/* Process Steps */}
-            <Text style={styles.sectionTitle}>So läuft der Termin ab</Text>
+            {/* Process Steps - Gamified as "Schaltplan" */}
+            <Text style={styles.sectionTitle}>🗺️ Der Ablaufplan</Text>
             <Section style={styles.stepsContainer}>
               {processSteps.map((step, index) => (
                 <Section key={index} style={{
@@ -123,21 +127,18 @@ export const AppointmentConfirm = ({
                 }}>
                   <Row>
                     <Column width={44}>
-                      <Text style={{
-                        ...styles.stepNumber,
-                        backgroundColor: colors.primary,
-                      }}>{index + 1}</Text>
+                      <Text style={styles.stepIcon}>{step.icon}</Text>
                     </Column>
-                    <Column style={{ paddingLeft: '12px' }}>
-                      <Text style={styles.stepText}>{step}</Text>
+                    <Column style={{ paddingLeft: '8px' }}>
+                      <Text style={styles.stepText}>{step.text}</Text>
                     </Column>
                   </Row>
                 </Section>
               ))}
             </Section>
 
-            {/* Preparation Tips */}
-            <Text style={styles.sectionTitle}>Gut vorbereitet?</Text>
+            {/* Preparation Tips - "Checkliste vor der Installation" */}
+            <Text style={styles.sectionTitle}>🔧 Checkliste für den Termin</Text>
             <Section style={styles.tipsContainer}>
               <Row>
                 {preparationTips.map((tip, index) => (
@@ -150,17 +151,17 @@ export const AppointmentConfirm = ({
               </Row>
             </Section>
 
-            {/* Reschedule Note */}
+            {/* Reschedule Note - Themed */}
             <Section style={styles.infoBox}>
-              <Text style={styles.infoTitle}>📅 Termin verschieben?</Text>
+              <Text style={styles.infoTitle}>🔄 Termin verschieben?</Text>
               <Text style={styles.infoText}>
-                Kein Problem! Rufen Sie uns einfach an oder schreiben Sie uns per WhatsApp, wenn Sie den Termin verschieben müssen. Bitte mindestens 24 Stunden vorher.
+                Kein Problem – ein kurzer Anruf oder eine WhatsApp genügt! Bitte mindestens 24 Stunden vorher, damit wir umplanen können.
               </Text>
             </Section>
 
             {/* CTA Buttons */}
             <Section style={styles.ctaSection}>
-              <Text style={styles.ctaIntro}>Bei Fragen erreichen Sie uns unter:</Text>
+              <Text style={styles.ctaIntro}>Bei Fragen – kurzer Draht zu uns:</Text>
               <Row>
                 <Column align="center" style={{ paddingRight: '8px' }}>
                   <Button
@@ -311,13 +312,13 @@ const styles = {
   successBadge: {
     backgroundColor: '#ecfdf5',
     borderRadius: '100px',
-    padding: '8px 16px',
+    padding: '10px 20px',
     marginBottom: '24px',
     textAlign: 'center' as const,
   },
   successText: {
-    fontSize: '14px',
-    fontWeight: 600,
+    fontSize: '16px',
+    fontWeight: 700,
     color: '#059669',
     margin: 0,
   },
@@ -341,6 +342,10 @@ const styles = {
     marginBottom: '32px',
     textAlign: 'center' as const,
   },
+  appointmentIcon: {
+    fontSize: '32px',
+    margin: '0 0 8px 0',
+  },
   appointmentLabel: {
     fontSize: '12px',
     fontWeight: 600,
@@ -358,6 +363,11 @@ const styles = {
   appointmentTime: {
     fontSize: '18px',
     color: '#166534',
+    margin: '0 0 12px 0',
+  },
+  appointmentNote: {
+    fontSize: '13px',
+    color: '#15803d',
     margin: 0,
   },
   sectionTitle: {
@@ -375,20 +385,14 @@ const styles = {
   stepRow: {
     padding: '14px 0',
   },
-  stepNumber: {
-    fontSize: '14px',
-    lineHeight: '28px',
-    color: '#FFFFFF',
-    borderRadius: '50%',
-    width: '28px',
-    height: '28px',
-    fontWeight: 600,
+  stepIcon: {
+    fontSize: '20px',
     textAlign: 'center' as const,
     margin: 0,
   },
   stepText: {
     fontSize: '15px',
-    lineHeight: '28px',
+    lineHeight: '22px',
     color: '#1A1A1A',
     margin: 0,
   },

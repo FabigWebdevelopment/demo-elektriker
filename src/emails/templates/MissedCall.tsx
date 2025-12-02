@@ -24,58 +24,69 @@ interface MissedCallProps {
 /**
  * Missed Call Email Template
  *
- * Enterprise-level design matching LeadConfirmation standard.
+ * Enterprise-level design with electrician-themed gamification.
+ * Creative metaphors make follow-ups engaging and memorable.
+ *
  * 3 variants with increasing urgency:
- * - Attempt 1: Friendly "we tried to call"
- * - Attempt 2: Concerned "second try"
- * - Attempt 3: Final "last chance"
+ * - Attempt 1: "Ist Ihr Akku leer?" - Friendly battery check
+ * - Attempt 2: "Spannungsprüfung #2" - Voltage test
+ * - Attempt 3: "Letzter Stromimpuls" - Final power impulse
  */
 export const MissedCall = ({
   firstName = 'Max',
   attemptNumber = 1,
 }: MissedCallProps) => {
-  const { company, contact, colors, trust, images, address, email } = brandConfig
+  const { company, contact, colors, trust, images, address } = brandConfig
 
-  // Variant-specific content
+  // Gamification variants with electrician theme
   const variants = {
     1: {
-      badge: '📞 Anruf verpasst',
+      badge: '🔋 Verbindung unterbrochen',
       badgeColor: '#f97316',
       badgeBg: '#fff7ed',
-      headline: `Wir haben Sie nicht erreicht, ${firstName}`,
-      intro: `wir haben heute versucht, Sie telefonisch zu erreichen, aber Sie leider nicht angetroffen. Gerne möchten wir mit Ihnen über Ihre Anfrage sprechen.`,
-      accentText: 'Keine Sorge – wir versuchen es gerne noch einmal! Oder rufen Sie uns einfach direkt zurück.',
-      ctaText: 'Jetzt zurückrufen',
+      headline: `Ist Ihr Akku leer, ${firstName}?`,
+      intro: `Wir haben versucht, Sie zu erreichen – aber die Leitung war tot! Keine Sorge, unser Leitungsprüfer zeigt: Die Verbindung kann wiederhergestellt werden.`,
+      accentIcon: '🔌',
+      accentText: 'Einfach den Stecker wieder reinstecken – rufen Sie uns zurück oder antworten Sie auf diese E-Mail!',
+      ctaText: 'Verbindung herstellen',
       showTips: true,
+      meterLevel: 33,
+      meterLabel: 'Kontaktversuch 1/3',
     },
     2: {
-      badge: '📱 Zweiter Anrufversuch',
+      badge: '⚡ Spannungsprüfung #2',
       badgeColor: '#d97706',
       badgeBg: '#fffbeb',
-      headline: `Zweiter Anrufversuch, ${firstName}`,
-      intro: `dies ist unser zweiter Versuch, Sie zu erreichen. Wir würden uns freuen, bald mit Ihnen über Ihre Anfrage sprechen zu können.`,
-      accentText: 'Ihr Projekt ist uns wichtig! Lassen Sie uns einen passenden Zeitpunkt für ein Gespräch finden.',
-      ctaText: 'Jetzt anrufen',
+      headline: `Zweite Messung, ${firstName}!`,
+      intro: `Unser Multimeter zeigt: Da ist noch Spannung auf der Leitung! Wir würden gerne den Stromkreis schließen und mit Ihnen über Ihr Projekt sprechen.`,
+      accentIcon: '🔍',
+      accentText: 'Der Prüfbericht wartet – lassen Sie uns gemeinsam die richtige Lösung finden.',
+      ctaText: 'Stromkreis schließen',
       showTips: false,
+      meterLevel: 66,
+      meterLabel: 'Kontaktversuch 2/3',
     },
     3: {
-      badge: '🔔 Letzte Nachricht',
+      badge: '🔔 Letzter Stromimpuls',
       badgeColor: '#dc2626',
       badgeBg: '#fef2f2',
-      headline: `Letzte Nachricht, ${firstName}`,
-      intro: `wir haben nun mehrfach versucht, Sie zu erreichen. Falls Sie noch Interesse an Ihrem Projekt haben, melden Sie sich gerne bei uns.`,
-      accentText: 'Dies ist unsere letzte automatische Nachricht. Danach schließen wir Ihre Anfrage vorerst ab.',
-      ctaText: 'Jetzt zurückrufen',
+      headline: `Finale Durchgangsprüfung, ${firstName}`,
+      intro: `Bevor wir den Sicherungskasten schließen: Falls Ihr Projekt noch aktuell ist, geben Sie uns ein Zeichen! Danach archivieren wir Ihre Anfrage vorerst.`,
+      accentIcon: '⏰',
+      accentText: 'Letzte Chance, den Schalter umzulegen – wir sind bereit, wenn Sie es sind!',
+      ctaText: 'Jetzt Kontakt aufnehmen',
       showTips: false,
+      meterLevel: 100,
+      meterLabel: 'Kontaktversuch 3/3',
     },
   }
 
   const variant = variants[attemptNumber]
 
   const callbackOptions = [
-    { time: 'Vormittags', hours: '8:00 - 12:00 Uhr' },
-    { time: 'Nachmittags', hours: '12:00 - 16:00 Uhr' },
-    { time: 'Spätnachmittags', hours: '16:00 - 18:00 Uhr' },
+    { time: 'Vormittags', hours: '8:00 - 12:00 Uhr', icon: '☀️' },
+    { time: 'Nachmittags', hours: '12:00 - 16:00 Uhr', icon: '🌤️' },
+    { time: 'Spätnachmittags', hours: '16:00 - 18:00 Uhr', icon: '🌅' },
   ]
 
   return (
@@ -100,11 +111,11 @@ export const MissedCall = ({
             </Row>
           </Section>
 
-          {/* Hero Image - themed for missed call */}
+          {/* Hero Image */}
           <Section style={{ padding: 0 }}>
             <Img
               src={images.missedCallImage}
-              alt={`${company.owner} am Telefon`}
+              alt={`${company.owner} prüft die Leitung`}
               width="100%"
               style={{ display: 'block', width: '100%', height: 'auto' }}
             />
@@ -126,12 +137,26 @@ export const MissedCall = ({
             <Text style={styles.greeting}>Hallo {firstName},</Text>
             <Text style={styles.intro}>{variant.intro}</Text>
 
-            {/* Accent Box */}
+            {/* Progress Meter - Gamification Element */}
+            <Section style={styles.meterContainer}>
+              <Text style={styles.meterLabel}>{variant.meterLabel}</Text>
+              <Section style={styles.meterTrack}>
+                <Section style={{
+                  ...styles.meterFill,
+                  width: `${variant.meterLevel}%`,
+                  backgroundColor: variant.badgeColor,
+                }} />
+              </Section>
+            </Section>
+
+            {/* Accent Box with Icon */}
             <Section style={{
               ...styles.accentBox,
               borderLeftColor: colors.primary,
             }}>
-              <Text style={styles.accentText}>{variant.accentText}</Text>
+              <Text style={styles.accentContent}>
+                <span style={styles.accentIcon}>{variant.accentIcon}</span> {variant.accentText}
+              </Text>
             </Section>
 
             {/* Callback Times - only on first attempt */}
@@ -145,13 +170,14 @@ export const MissedCall = ({
                       borderBottom: index < callbackOptions.length - 1 ? `1px solid ${colors.border}` : 'none',
                     }}>
                       <Row>
-                        <Column width={100}>
+                        <Column width={40}>
+                          <Text style={styles.optionIcon}>{option.icon}</Text>
+                        </Column>
+                        <Column>
                           <Text style={{
                             ...styles.optionTime,
                             color: colors.primary,
                           }}>{option.time}</Text>
-                        </Column>
-                        <Column>
                           <Text style={styles.optionHours}>{option.hours}</Text>
                         </Column>
                       </Row>
@@ -167,9 +193,9 @@ export const MissedCall = ({
             {/* Attempt 2: Quick tip */}
             {attemptNumber === 2 && (
               <Section style={styles.infoBox}>
-                <Text style={styles.infoTitle}>💡 Tipp</Text>
+                <Text style={styles.infoTitle}>💡 Kurzer Draht zu uns</Text>
                 <Text style={styles.infoText}>
-                  Antworten Sie einfach auf diese E-Mail mit einem Zeitfenster, wann wir Sie am besten erreichen. Wir rufen dann pünktlich an!
+                  Antworten Sie einfach auf diese E-Mail mit einem Zeitfenster, wann wir Sie am besten erreichen. Wir rufen dann pünktlich an – versprochen!
                 </Text>
               </Section>
             )}
@@ -177,16 +203,16 @@ export const MissedCall = ({
             {/* Attempt 3: Final note */}
             {attemptNumber === 3 && (
               <Section style={styles.infoBox}>
-                <Text style={styles.infoTitle}>ℹ️ Gut zu wissen</Text>
+                <Text style={styles.infoTitle}>📋 Projekt auf Pause?</Text>
                 <Text style={styles.infoText}>
-                  Falls Ihr Projekt derzeit nicht aktuell ist, können Sie sich jederzeit wieder bei uns melden. Wir sind auch in Zukunft gerne für Sie da!
+                  Kein Problem! Falls Ihr Projekt derzeit nicht aktuell ist, können Sie sich jederzeit wieder bei uns melden. Wir sind auch in Zukunft gerne Ihr Elektriker des Vertrauens!
                 </Text>
               </Section>
             )}
 
             {/* CTA Buttons */}
             <Section style={styles.ctaSection}>
-              <Text style={styles.ctaIntro}>Rufen Sie uns direkt an:</Text>
+              <Text style={styles.ctaIntro}>Schalten Sie uns frei:</Text>
               <Row>
                 <Column align="center" style={{ paddingRight: '8px' }}>
                   <Button
@@ -357,6 +383,29 @@ const styles = {
     color: '#1A1A1A',
     margin: '0 0 24px 0',
   },
+  meterContainer: {
+    marginBottom: '24px',
+  },
+  meterLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: '#57534E',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+    margin: '0 0 8px 0',
+    textAlign: 'center' as const,
+  },
+  meterTrack: {
+    backgroundColor: '#E7E5E4',
+    borderRadius: '100px',
+    height: '8px',
+    overflow: 'hidden',
+  },
+  meterFill: {
+    height: '8px',
+    borderRadius: '100px',
+    transition: 'width 0.3s ease',
+  },
   accentBox: {
     backgroundColor: '#F0EBE8',
     borderLeft: '4px solid',
@@ -364,11 +413,14 @@ const styles = {
     padding: '16px 20px',
     marginBottom: '24px',
   },
-  accentText: {
+  accentContent: {
     fontSize: '15px',
     lineHeight: '24px',
     color: '#1A1A1A',
     margin: 0,
+  },
+  accentIcon: {
+    fontSize: '18px',
   },
   sectionTitle: {
     fontSize: '18px',
@@ -385,13 +437,18 @@ const styles = {
   optionRow: {
     padding: '14px 0',
   },
+  optionIcon: {
+    fontSize: '20px',
+    margin: 0,
+    textAlign: 'center' as const,
+  },
   optionTime: {
     fontSize: '15px',
     fontWeight: 600,
-    margin: 0,
+    margin: '0 0 2px 0',
   },
   optionHours: {
-    fontSize: '14px',
+    fontSize: '13px',
     color: '#57534E',
     margin: 0,
   },

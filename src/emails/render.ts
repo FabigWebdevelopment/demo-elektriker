@@ -227,16 +227,17 @@ export function getEmailSender() {
  * Render Missed Call Email (for call tracking workflow)
  *
  * Sent when business owner couldn't reach the customer.
- * Has 3 variants with increasing urgency.
+ * Has 3 variants with increasing urgency and electrician-themed gamification.
  */
 export async function renderMissedCallEmail(
   firstName: string,
   attemptNumber: 1 | 2 | 3
 ): Promise<{ html: string; subject: string }> {
+  // Gamified subjects with electrician theme
   const subjects: Record<number, string> = {
-    1: `Wir haben Sie nicht erreicht`,
-    2: `Zweiter Anrufversuch - ${brandConfig.company.name}`,
-    3: `Letzte Nachricht - wir möchten Sie erreichen`,
+    1: `🔋 Ist Ihr Akku leer, ${firstName}?`,
+    2: `⚡ Spannungsprüfung #2 – ${brandConfig.company.name}`,
+    3: `🔔 Letzter Stromimpuls – wir sind für Sie da!`,
   }
 
   const html = await render(
@@ -256,6 +257,7 @@ export async function renderMissedCallEmail(
  * Render Appointment Confirmation Email (for call tracking workflow)
  *
  * Sent when an appointment is scheduled with the customer.
+ * Gamified theme: "Der Stromkreis ist geschlossen!"
  */
 export async function renderAppointmentConfirmation(
   firstName: string,
@@ -272,6 +274,6 @@ export async function renderAppointmentConfirmation(
 
   return {
     html,
-    subject: `Ihr Termin am ${appointmentDate} ist bestätigt!`,
+    subject: `⚡ Stromkreis geschlossen! Termin am ${appointmentDate}`,
   }
 }
