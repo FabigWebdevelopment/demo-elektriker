@@ -1,7 +1,6 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { FlowNode, FlowNodeCompact } from './FlowNode'
 import {
@@ -12,9 +11,9 @@ import {
 import {
   mainWorkflowSteps,
   workflowBranches,
-  type WorkflowStep,
 } from '@/data/workflow-data'
 import { Badge } from '@/components/ui/badge'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { Phone, ArrowDown } from 'lucide-react'
 
 interface WorkflowDiagramProps {
@@ -28,52 +27,40 @@ export function WorkflowDiagram({
   showBranches = true,
   animated = true,
 }: WorkflowDiagramProps) {
-  const [hoveredStep, setHoveredStep] = useState<string | null>(null)
-
   return (
-    <div className={cn('w-full', className)}>
-      {/* Main horizontal flow */}
-      <div className="flex flex-col items-center gap-8">
-        {/* Desktop: Horizontal layout */}
-        <div className="hidden md:flex items-center justify-center gap-2 flex-wrap">
-          {mainWorkflowSteps.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div
-                onMouseEnter={() => setHoveredStep(step.id)}
-                onMouseLeave={() => setHoveredStep(null)}
-              >
-                <FlowNode
-                  step={step}
-                  index={index}
-                  isActive={hoveredStep === step.id}
-                  showDetails={hoveredStep === step.id}
-                  size="md"
-                />
+    <TooltipProvider>
+      <div className={cn('w-full', className)}>
+        {/* Main horizontal flow */}
+        <div className="flex flex-col items-center gap-8">
+          {/* Desktop: Horizontal layout */}
+          <div className="hidden md:flex items-center justify-center gap-2 flex-wrap">
+            {mainWorkflowSteps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <FlowNode step={step} index={index} size="md" />
+                {index < mainWorkflowSteps.length - 1 && (
+                  <FlowConnectionHorizontal
+                    delay={index * 0.15 + 0.3}
+                    animated={animated}
+                  />
+                )}
               </div>
-              {index < mainWorkflowSteps.length - 1 && (
-                <FlowConnectionHorizontal
-                  delay={index * 0.15 + 0.3}
-                  animated={animated}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Mobile: Vertical layout */}
-        <div className="flex md:hidden flex-col items-center gap-2">
-          {mainWorkflowSteps.map((step, index) => (
-            <div key={step.id} className="flex flex-col items-center">
-              <FlowNode step={step} index={index} size="sm" />
-              {index < mainWorkflowSteps.length - 1 && (
-                <FlowConnectionVertical
-                  delay={index * 0.15 + 0.3}
-                  animated={animated}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+          {/* Mobile: Vertical layout */}
+          <div className="flex md:hidden flex-col items-center gap-2">
+            {mainWorkflowSteps.map((step, index) => (
+              <div key={step.id} className="flex flex-col items-center">
+                <FlowNode step={step} index={index} size="sm" />
+                {index < mainWorkflowSteps.length - 1 && (
+                  <FlowConnectionVertical
+                    delay={index * 0.15 + 0.3}
+                    animated={animated}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
 
         {/* Call indicator */}
         <motion.div
@@ -169,8 +156,9 @@ export function WorkflowDiagram({
             </div>
           </>
         )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }
 

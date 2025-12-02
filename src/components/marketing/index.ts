@@ -24,3 +24,7 @@ export {
   PricingCompact,
   PricingHighlight,
 } from './PricingPreview'
+export {
+  LeadQualificationSection,
+  LeadQualificationCompact,
+} from './LeadQualificationSection'

@@ -2,13 +2,17 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import type { WorkflowStep } from '@/data/workflow-data'
 
 interface FlowNodeProps {
   step: WorkflowStep
   index: number
   isActive?: boolean
-  showDetails?: boolean
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }
@@ -69,7 +73,6 @@ export function FlowNode({
   step,
   index,
   isActive = false,
-  showDetails = false,
   size = 'md',
   className,
 }: FlowNodeProps) {
@@ -90,57 +93,71 @@ export function FlowNode({
       }}
       className={cn('flex flex-col items-center gap-2', className)}
     >
-      {/* Node circle */}
-      <motion.div
-        whileHover={{ scale: 1.05, y: -2 }}
-        className={cn(
-          'relative flex items-center justify-center rounded-2xl border-2 transition-all duration-300',
-          sizes.container,
-          isActive ? colors.activeBg : colors.bg,
-          colors.border,
-          'shadow-sm hover:shadow-md cursor-pointer'
-        )}
-      >
-        <Icon
-          className={cn(
-            sizes.icon,
-            'transition-colors duration-300',
-            isActive ? colors.activeIcon : colors.icon
-          )}
-        />
-
-        {/* Timing badge */}
-        {step.timing && (
-          <motion.span
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 + 0.2 }}
-            className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm border border-border"
-          >
-            {step.timing}
-          </motion.span>
-        )}
-
-        {/* Pulse animation for active node */}
-        {isActive && (
+      {/* Node circle with tooltip */}
+      <Tooltip delayDuration={200}>
+        <TooltipTrigger asChild>
           <motion.div
             className={cn(
-              'absolute inset-0 rounded-2xl',
-              colors.activeBg,
-              'opacity-20'
+              'relative flex items-center justify-center rounded-2xl border-2 transition-all duration-300',
+              sizes.container,
+              isActive ? colors.activeBg : colors.bg,
+              colors.border,
+              'shadow-sm hover:shadow-md hover:border-primary/40 cursor-pointer'
             )}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.2, 0, 0.2],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-        )}
-      </motion.div>
+          >
+            <Icon
+              className={cn(
+                sizes.icon,
+                'transition-colors duration-300',
+                isActive ? colors.activeIcon : colors.icon
+              )}
+            />
+
+            {/* Timing badge */}
+            {step.timing && (
+              <motion.span
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 + 0.2 }}
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm border border-border"
+              >
+                {step.timing}
+              </motion.span>
+            )}
+
+            {/* Pulse animation for active node */}
+            {isActive && (
+              <motion.div
+                className={cn(
+                  'absolute inset-0 rounded-2xl',
+                  colors.activeBg,
+                  'opacity-20'
+                )}
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.2, 0, 0.2],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+            )}
+          </motion.div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[220px]">
+          <p className="font-semibold">{step.title}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {step.description}
+          </p>
+          {step.timing && (
+            <p className="text-xs text-primary mt-2 font-medium">
+              ⏱ {step.timing}
+            </p>
+          )}
+        </TooltipContent>
+      </Tooltip>
 
       {/* Labels */}
       <div className="text-center">
@@ -161,20 +178,6 @@ export function FlowNode({
           {step.subtitle}
         </motion.p>
       </div>
-
-      {/* Expanded details on hover/click */}
-      {showDetails && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="max-w-[160px] text-center"
-        >
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {step.description}
-          </p>
-        </motion.div>
-      )}
     </motion.div>
   )
 }

@@ -10,6 +10,7 @@ import {
   FeatureGrid,
   PricingGrid,
   PricingHighlight,
+  LeadQualificationSection,
 } from '@/components/marketing'
 import { featureItems, pricingTiers } from '@/data/workflow-data'
 import { DEMO_MODE, demoConfig } from '@/config/demo.config'
@@ -143,6 +144,9 @@ export default function SoFunktioniertEsPage() {
             </div>
           </div>
         </section>
+
+        {/* Lead Qualification Section */}
+        <LeadQualificationSection />
 
         {/* Workflow Diagram Section */}
         <section className="py-16 md:py-24">
