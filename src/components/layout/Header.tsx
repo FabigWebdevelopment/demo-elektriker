@@ -41,10 +41,12 @@ import {
   Clock,
   Star,
   Flame,
+  Sparkles,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 import { ElectricianLogo } from '@/components/ElectricianLogo'
+import { DEMO_MODE } from '@/config/demo.config'
 
 // Spring animation configs
 const springTransition = {
@@ -442,6 +444,24 @@ export function Header({
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
+
+              {/* Demo-only: So funktioniert's */}
+              {DEMO_MODE && (
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/so-funktioniert-es"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
+                      )}
+                    >
+                      <Sparkles className="mr-1.5 h-4 w-4" />
+                      So funktioniert&apos;s
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              )}
             </NavigationMenuList>
           </NavigationMenu>
 
@@ -558,6 +578,21 @@ export function Header({
                       <span className="font-semibold">Kontakt</span>
                       <ChevronRight className="h-4 w-4" />
                     </Link>
+
+                    {/* Demo-only: So funktioniert's */}
+                    {DEMO_MODE && (
+                      <Link
+                        href="/so-funktioniert-es"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                      >
+                        <span className="font-semibold text-primary flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          So funktioniert&apos;s
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-primary" />
+                      </Link>
+                    )}
                   </div>
 
                   {/* Mobile CTA */}
