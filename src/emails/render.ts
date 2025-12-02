@@ -10,6 +10,8 @@ import { FollowUp1 } from './templates/FollowUp1'
 import { FollowUp2 } from './templates/FollowUp2'
 import { FollowUp3 } from './templates/FollowUp3'
 import { OwnerNotification } from './templates/OwnerNotification'
+import { MissedCall } from './templates/MissedCall'
+import { AppointmentConfirm } from './templates/AppointmentConfirm'
 import { brandConfig } from './config/brand.config'
 import React from 'react'
 
@@ -218,5 +220,58 @@ export function getEmailSender() {
   return {
     from: `${brandConfig.email.fromName} <${brandConfig.email.fromEmail}>`,
     replyTo: brandConfig.email.replyTo,
+  }
+}
+
+/**
+ * Render Missed Call Email (for call tracking workflow)
+ *
+ * Sent when business owner couldn't reach the customer.
+ * Has 3 variants with increasing urgency.
+ */
+export async function renderMissedCallEmail(
+  firstName: string,
+  attemptNumber: 1 | 2 | 3
+): Promise<{ html: string; subject: string }> {
+  const subjects: Record<number, string> = {
+    1: `Wir haben Sie nicht erreicht`,
+    2: `Zweiter Anrufversuch - ${brandConfig.company.name}`,
+    3: `Letzte Nachricht - wir möchten Sie erreichen`,
+  }
+
+  const html = await render(
+    React.createElement(MissedCall, {
+      firstName,
+      attemptNumber,
+    })
+  )
+
+  return {
+    html,
+    subject: subjects[attemptNumber],
+  }
+}
+
+/**
+ * Render Appointment Confirmation Email (for call tracking workflow)
+ *
+ * Sent when an appointment is scheduled with the customer.
+ */
+export async function renderAppointmentConfirmation(
+  firstName: string,
+  appointmentDate: string, // Already formatted German date
+  appointmentTime?: string
+): Promise<{ html: string; subject: string }> {
+  const html = await render(
+    React.createElement(AppointmentConfirm, {
+      firstName,
+      appointmentDate,
+      appointmentTime,
+    })
+  )
+
+  return {
+    html,
+    subject: `Ihr Termin am ${appointmentDate} ist bestätigt!`,
   }
 }

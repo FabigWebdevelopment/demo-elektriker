@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { renderMissedCallEmail, renderAppointmentConfirmation, getEmailSender } from '@/emails/render'
+import { brandConfig } from '@/emails/config/brand.config'
 
 /**
  * Call Status Webhook Endpoint
@@ -22,14 +24,9 @@ import { NextResponse } from 'next/server'
 const TWENTY_API_URL = process.env.TWENTY_CRM_API_URL || ""
 const TWENTY_API_KEY = process.env.TWENTY_API_KEY || ""
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ""
-const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || "Kundenservice"
-const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS || "info@fabig.website"
-const EMAIL_FROM = `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`
 
-// Brand info for emails
-const BRAND_NAME = process.env.EMAIL_FROM_NAME || "Müller Elektrotechnik"
-const BRAND_PHONE = process.env.BRAND_PHONE_DISPLAY || "089 1234 5678"
-const BRAND_EMAIL = process.env.BRAND_EMAIL || "info@mueller-elektro.de"
+// Get email config from brand config
+const { from: EMAIL_FROM, replyTo: EMAIL_REPLY_TO } = getEmailSender()
 
 // =============================================================================
 // TYPES
@@ -167,7 +164,26 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log(`Found: opportunityId=${opportunityId}, personId=${personId}`)
+    console.log(`Found via taskTargets: opportunityId=${opportunityId}, personId=${personId}`)
+
+    // FALLBACK: If no personId found via taskTargets, try via opportunity.pointOfContactId
+    if (!personId && opportunityId) {
+      console.log('No personId in taskTargets, trying opportunity.pointOfContactId...')
+      try {
+        const oppResponse = await fetch(
+          `${apiUrl}/opportunities/${opportunityId}`,
+          { headers: { Authorization: `Bearer ${TWENTY_API_KEY}` } }
+        )
+        if (oppResponse.ok) {
+          const oppData = await oppResponse.json()
+          const opp = oppData.data || oppData
+          personId = opp.pointOfContactId
+          console.log(`Found personId via opportunity: ${personId}`)
+        }
+      } catch (e) {
+        console.error('Failed to fetch opportunity for person lookup:', e)
+      }
+    }
 
     // Fetch person details for email
     let person: TwentyPerson | null = null
@@ -187,47 +203,72 @@ export async function POST(request: Request) {
       taskId,
       anrufStatus,
       actions: [],
+      emailSent: false,
+      emailSkipReason: null as string | null,
+      personFound: !!person,
+      personEmail: person?.emails?.primaryEmail || null,
     }
 
     switch (anrufStatus) {
-      case 'NICHT_ERREICHT_1':
-        await handleNichtErreicht(apiUrl, person, opportunityId, 1)
+      case 'NICHT_ERREICHT_1': {
+        const emailResult = await handleNichtErreicht(apiUrl, person, opportunityId, 1)
+        result.emailSent = emailResult.sent
+        result.emailSkipReason = emailResult.skipReason
         if (opportunityId) {
           await updateOpportunityStage(apiUrl, opportunityId, 'FOLLOW_UP')
           ;(result.actions as string[]).push('opportunity_moved_to_follow_up')
         }
-        ;(result.actions as string[]).push('sent_missed_call_email_1')
+        if (emailResult.sent) {
+          ;(result.actions as string[]).push('sent_missed_call_email_1')
+        }
         break
+      }
 
-      case 'NICHT_ERREICHT_2':
-        await handleNichtErreicht(apiUrl, person, opportunityId, 2)
+      case 'NICHT_ERREICHT_2': {
+        const emailResult = await handleNichtErreicht(apiUrl, person, opportunityId, 2)
+        result.emailSent = emailResult.sent
+        result.emailSkipReason = emailResult.skipReason
         // Stage stays at FOLLOW_UP
-        ;(result.actions as string[]).push('sent_missed_call_email_2')
+        if (emailResult.sent) {
+          ;(result.actions as string[]).push('sent_missed_call_email_2')
+        }
         break
+      }
 
-      case 'NICHT_ERREICHT_3':
-        await handleNichtErreicht(apiUrl, person, opportunityId, 3)
+      case 'NICHT_ERREICHT_3': {
+        const emailResult = await handleNichtErreicht(apiUrl, person, opportunityId, 3)
+        result.emailSent = emailResult.sent
+        result.emailSkipReason = emailResult.skipReason
         if (opportunityId) {
           await updateOpportunityStage(apiUrl, opportunityId, 'VERLOREN')
           ;(result.actions as string[]).push('opportunity_closed_lost')
         }
-        ;(result.actions as string[]).push('sent_final_missed_call_email')
+        if (emailResult.sent) {
+          ;(result.actions as string[]).push('sent_final_missed_call_email')
+        }
         break
+      }
 
-      case 'TERMIN':
+      case 'TERMIN': {
         if (!terminDatum) {
           return NextResponse.json(
             { error: 'terminDatum required for TERMIN status' },
             { status: 400 }
           )
         }
-        await handleTerminVereinbart(apiUrl, person, opportunityId, terminDatum, terminUhrzeit)
-        ;(result.actions as string[]).push('calendar_event_created', 'confirmation_email_sent')
+        const emailResult = await handleTerminVereinbart(apiUrl, person, opportunityId, terminDatum, terminUhrzeit)
+        result.emailSent = emailResult.sent
+        result.emailSkipReason = emailResult.skipReason
+        ;(result.actions as string[]).push('calendar_event_created')
+        if (emailResult.sent) {
+          ;(result.actions as string[]).push('confirmation_email_sent')
+        }
         if (opportunityId) {
           await updateOpportunityStage(apiUrl, opportunityId, 'TERMIN_VEREINBART')
           ;(result.actions as string[]).push('opportunity_moved_to_termin')
         }
         break
+      }
 
       case 'KEIN_INTERESSE':
         if (opportunityId) {
@@ -276,15 +317,31 @@ async function updateOpportunityStage(apiUrl: string, opportunityId: string, sta
   }
 }
 
+interface EmailResult {
+  sent: boolean
+  skipReason: string | null
+}
+
 async function handleNichtErreicht(
   apiUrl: string,
   person: TwentyPerson | null,
   opportunityId: string | undefined,
   attemptNumber: 1 | 2 | 3
-): Promise<void> {
-  if (!person?.emails?.primaryEmail || !RESEND_API_KEY) {
-    console.log('No customer email or Resend not configured, skipping email')
-    return
+): Promise<EmailResult> {
+  // Check prerequisites
+  if (!RESEND_API_KEY) {
+    console.log('RESEND_API_KEY not configured, skipping email')
+    return { sent: false, skipReason: 'RESEND_API_KEY not configured' }
+  }
+
+  if (!person) {
+    console.log('No person found, skipping email')
+    return { sent: false, skipReason: 'Person not found in CRM' }
+  }
+
+  if (!person.emails?.primaryEmail) {
+    console.log('Person has no primaryEmail, skipping email')
+    return { sent: false, skipReason: 'Person has no email address' }
   }
 
   const firstName = person.name?.firstName || 'Kunde'
@@ -292,34 +349,42 @@ async function handleNichtErreicht(
 
   console.log(`Sending missed call email #${attemptNumber} to ${email}...`)
 
-  const { html, subject } = generateMissedCallEmail(firstName, attemptNumber)
+  const { html, subject } = await renderMissedCallEmail(firstName, attemptNumber)
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: EMAIL_FROM,
-      to: email,
-      bcc: EMAIL_FROM_ADDRESS,
-      reply_to: EMAIL_FROM_ADDRESS,
-      subject,
-      html,
-    }),
-  })
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: email,
+        bcc: brandConfig.email.fromEmail,
+        reply_to: EMAIL_REPLY_TO,
+        subject,
+        html,
+      }),
+    })
 
-  if (response.ok) {
-    console.log(`✅ Missed call email #${attemptNumber} sent to ${email}`)
-  } else {
-    const errorText = await response.text()
-    console.error(`❌ Failed to send email: ${errorText}`)
-  }
+    if (response.ok) {
+      console.log(`✅ Missed call email #${attemptNumber} sent to ${email}`)
 
-  // Create note in CRM
-  if (opportunityId) {
-    await createNote(apiUrl, opportunityId, `📵 Anrufversuch ${attemptNumber}`, `Kunde nicht erreicht. E-Mail gesendet.`)
+      // Create note in CRM (only if email was sent)
+      if (opportunityId) {
+        await createNote(apiUrl, opportunityId, `📵 Anrufversuch ${attemptNumber}`, `Kunde nicht erreicht. E-Mail gesendet an ${email}.`)
+      }
+
+      return { sent: true, skipReason: null }
+    } else {
+      const errorText = await response.text()
+      console.error(`❌ Failed to send email: ${errorText}`)
+      return { sent: false, skipReason: `Resend API error: ${errorText.slice(0, 100)}` }
+    }
+  } catch (error) {
+    console.error(`❌ Email send exception:`, error)
+    return { sent: false, skipReason: `Exception: ${error instanceof Error ? error.message : String(error)}` }
   }
 }
 
@@ -329,7 +394,7 @@ async function handleTerminVereinbart(
   opportunityId: string | undefined,
   terminDatum: string,
   terminUhrzeit?: string
-): Promise<void> {
+): Promise<EmailResult> {
   const firstName = person?.name?.firstName || 'Kunde'
   const customerName = person
     ? `${person.name.firstName} ${person.name.lastName}`.trim()
@@ -370,14 +435,29 @@ async function handleTerminVereinbart(
   }
 
   // Send confirmation email
-  if (person?.emails?.primaryEmail && RESEND_API_KEY) {
-    console.log('Sending appointment confirmation email...')
+  if (!RESEND_API_KEY) {
+    console.log('RESEND_API_KEY not configured, skipping email')
+    return { sent: false, skipReason: 'RESEND_API_KEY not configured' }
+  }
 
-    const formattedDate = formatGermanDate(terminDatum)
-    const formattedTime = terminUhrzeit ? `${terminUhrzeit} Uhr` : undefined
+  if (!person) {
+    console.log('No person found, skipping email')
+    return { sent: false, skipReason: 'Person not found in CRM' }
+  }
 
-    const { html, subject } = generateAppointmentEmail(firstName, formattedDate, formattedTime)
+  if (!person.emails?.primaryEmail) {
+    console.log('Person has no primaryEmail, skipping email')
+    return { sent: false, skipReason: 'Person has no email address' }
+  }
 
+  console.log('Sending appointment confirmation email...')
+
+  const formattedDate = formatGermanDate(terminDatum)
+  const formattedTime = terminUhrzeit ? `${terminUhrzeit} Uhr` : undefined
+
+  const { html, subject } = await renderAppointmentConfirmation(firstName, formattedDate, formattedTime)
+
+  try {
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -387,8 +467,8 @@ async function handleTerminVereinbart(
       body: JSON.stringify({
         from: EMAIL_FROM,
         to: person.emails.primaryEmail,
-        bcc: EMAIL_FROM_ADDRESS,
-        reply_to: EMAIL_FROM_ADDRESS,
+        bcc: brandConfig.email.fromEmail,
+        reply_to: EMAIL_REPLY_TO,
         subject,
         html,
       }),
@@ -396,16 +476,22 @@ async function handleTerminVereinbart(
 
     if (emailResponse.ok) {
       console.log(`✅ Appointment confirmation sent to ${person.emails.primaryEmail}`)
+
+      // Create note (only if email was sent)
+      if (opportunityId) {
+        const timeStr = terminUhrzeit ? ` um ${terminUhrzeit} Uhr` : ''
+        await createNote(apiUrl, opportunityId, `📅 Termin vereinbart`, `Termin am ${formattedDate}${timeStr}. Bestätigung an ${person.emails.primaryEmail} gesendet.`)
+      }
+
+      return { sent: true, skipReason: null }
     } else {
       const errorText = await emailResponse.text()
       console.error(`❌ Failed to send confirmation: ${errorText}`)
+      return { sent: false, skipReason: `Resend API error: ${errorText.slice(0, 100)}` }
     }
-  }
-
-  // Create note
-  if (opportunityId) {
-    const timeStr = terminUhrzeit ? ` um ${terminUhrzeit} Uhr` : ''
-    await createNote(apiUrl, opportunityId, `📅 Termin vereinbart`, `Termin am ${formatGermanDate(terminDatum)}${timeStr}`)
+  } catch (error) {
+    console.error(`❌ Email send exception:`, error)
+    return { sent: false, skipReason: `Exception: ${error instanceof Error ? error.message : String(error)}` }
   }
 }
 
@@ -445,219 +531,6 @@ async function createNote(apiUrl: string, opportunityId: string, title: string, 
       })
     }
   }
-}
-
-// =============================================================================
-// EMAIL TEMPLATES
-// =============================================================================
-
-function generateMissedCallEmail(firstName: string, attemptNumber: 1 | 2 | 3): { html: string; subject: string } {
-  const subjects: Record<number, string> = {
-    1: `Wir haben Sie nicht erreicht`,
-    2: `Zweiter Anrufversuch - ${BRAND_NAME}`,
-    3: `Letzter Versuch - wir möchten Sie erreichen`,
-  }
-
-  const headlines: Record<number, string> = {
-    1: 'Wir haben Sie leider nicht erreicht',
-    2: 'Zweiter Anrufversuch',
-    3: 'Letzter Versuch',
-  }
-
-  const messages: Record<number, string> = {
-    1: `wir haben heute versucht, Sie telefonisch zu erreichen, aber leider niemanden angetroffen.
-        Gerne möchten wir mit Ihnen über Ihre Anfrage sprechen.`,
-    2: `dies ist unser zweiter Versuch, Sie zu erreichen. Wir würden uns freuen,
-        bald mit Ihnen über Ihre Anfrage sprechen zu können.`,
-    3: `wir haben nun mehrfach versucht, Sie zu erreichen. Falls Sie noch Interesse haben,
-        melden Sie sich gerne bei uns. Ansonsten schließen wir Ihre Anfrage vorerst ab.`,
-  }
-
-  const ctaColors: Record<number, string> = {
-    1: '#3b82f6', // blue
-    2: '#f97316', // orange
-    3: '#dc2626', // red
-  }
-
-  const subject = subjects[attemptNumber]
-  const headline = headlines[attemptNumber]
-  const message = messages[attemptNumber]
-  const ctaColor = ctaColors[attemptNumber]
-
-  const html = `
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5;">
-    <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-
-          <!-- Header -->
-          <tr>
-            <td style="background-color: ${ctaColor}; padding: 32px 40px; text-align: center;">
-              <div style="font-size: 48px; margin-bottom: 16px;">📞</div>
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
-                ${headline}
-              </h1>
-            </td>
-          </tr>
-
-          <!-- Content -->
-          <tr>
-            <td style="padding: 40px;">
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-                Hallo ${firstName},
-              </p>
-
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-                ${message}
-              </p>
-
-              <!-- CTA Button -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 32px 0;">
-                <tr>
-                  <td align="center">
-                    <a href="tel:${BRAND_PHONE.replace(/\s/g, '')}" style="display: inline-block; background-color: ${ctaColor}; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                      📞 Jetzt zurückrufen: ${BRAND_PHONE}
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-                Oder antworten Sie einfach auf diese E-Mail mit Ihrer bevorzugten Rückrufzeit.
-              </p>
-
-              <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #374151;">
-                Mit freundlichen Grüßen,<br>
-                <strong>Ihr Team von ${BRAND_NAME}</strong>
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #f9fafb; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                ${BRAND_NAME} · ${BRAND_PHONE} · ${BRAND_EMAIL}
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-`
-
-  return { html, subject }
-}
-
-function generateAppointmentEmail(firstName: string, dateStr: string, timeStr?: string): { html: string; subject: string } {
-  const subject = `✅ Ihr Termin am ${dateStr}`
-
-  const html = `
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terminbestätigung</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5;">
-    <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 32px 40px; text-align: center;">
-              <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
-                Termin bestätigt!
-              </h1>
-            </td>
-          </tr>
-
-          <!-- Content -->
-          <tr>
-            <td style="padding: 40px;">
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-                Hallo ${firstName},
-              </p>
-
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-                vielen Dank für Ihr Vertrauen! Wir freuen uns, Ihnen mitteilen zu können, dass Ihr Termin bestätigt wurde.
-              </p>
-
-              <!-- Appointment Box -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 32px 0;">
-                <tr>
-                  <td style="background-color: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px; padding: 24px;">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td style="text-align: center;">
-                          <div style="font-size: 14px; color: #15803d; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                            Ihr Termin
-                          </div>
-                          <div style="font-size: 20px; color: #166534; font-weight: 700;">
-                            📅 ${dateStr}
-                          </div>
-                          ${timeStr ? `
-                          <div style="font-size: 18px; color: #166534; margin-top: 8px;">
-                            🕐 ${timeStr}
-                          </div>
-                          ` : ''}
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-                Wir werden Sie kurz vor dem Termin noch einmal kontaktieren, um alle Details zu besprechen.
-              </p>
-
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-                <strong>Haben Sie Fragen?</strong><br>
-                Rufen Sie uns gerne an: <a href="tel:${BRAND_PHONE.replace(/\s/g, '')}" style="color: #16a34a; text-decoration: none; font-weight: 600;">${BRAND_PHONE}</a>
-              </p>
-
-              <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #374151;">
-                Mit freundlichen Grüßen,<br>
-                <strong>Ihr Team von ${BRAND_NAME}</strong>
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #f9fafb; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                ${BRAND_NAME} · ${BRAND_PHONE} · ${BRAND_EMAIL}
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-`
-
-  return { html, subject }
 }
 
 // =============================================================================
