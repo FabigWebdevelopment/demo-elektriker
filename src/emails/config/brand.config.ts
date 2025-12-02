@@ -175,9 +175,10 @@ export const brandConfig: BrandConfig = {
   },
 
   email: {
-    fromName: 'Müller Elektrotechnik',
-    fromEmail: 'info@mueller-elektro.de',
-    replyTo: 'info@mueller-elektro.de',
+    // Use env variables for email sender (must match Resend verified domain)
+    fromName: process.env.EMAIL_FROM_NAME || 'Müller Elektrotechnik',
+    fromEmail: process.env.EMAIL_FROM_ADDRESS || 'info@fabig.website',
+    replyTo: process.env.EMAIL_FROM_ADDRESS || 'info@fabig.website',
     footerTagline: 'Strom ist unsere Leidenschaft seit 2009',
   },
 }
