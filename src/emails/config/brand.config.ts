@@ -148,23 +148,21 @@ export const brandConfig: BrandConfig = {
   images: {
     logo: `${SITE_URL}/demo-electrician/electrician-logo.png`,
     logoWidth: 180,
-    // Owner photo - generated using CEO reference image (optimized JPG)
-    ownerPhoto: `${SITE_URL}/images/email/owner-photo.jpg`,
+    // Owner photo - optimized WebP
+    ownerPhoto: `${SITE_URL}/images/email/owner-photo.webp`,
     emailBanner: `${SITE_URL}/images/email/banner.jpg`,
     // Reference image for AI generation - set via CEO_REFERENCE_IMAGE_URL env var
     ceoReferenceImage: process.env.CEO_REFERENCE_IMAGE_URL || '',
-    // Generated images featuring the CEO in different scenarios
-    // These must exist in public/images/email/
-    confirmationImage: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
-    followUp1Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
-    followUp2Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
-    followUp3Image: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
-    hotLeadImage: `${SITE_URL}/images/email/confirmation-electrician.jpg`,
-    // Call tracking email images (themed for context)
-    // missedCallImage: Owner on phone looking friendly/professional
-    // appointmentImage: Consultation/handshake scene
-    missedCallImage: `${SITE_URL}/images/email/missed-call-electrician.jpg`,
-    appointmentImage: `${SITE_URL}/images/email/appointment-electrician.jpg`,
+    // Email hero images - optimized WebP served from Vercel
+    // All images in public/images/email/ accessible at https://elektriker.fabig-suite.de/images/email/
+    confirmationImage: `${SITE_URL}/images/email/confirmation-electrician.webp`,
+    followUp1Image: `${SITE_URL}/images/email/followup-1-electrician.webp`,
+    followUp2Image: `${SITE_URL}/images/email/followup-2-electrician.webp`,
+    followUp3Image: `${SITE_URL}/images/email/followup-3-electrician.webp`,
+    hotLeadImage: `${SITE_URL}/images/email/hot-lead-electrician.webp`,
+    // Call tracking email images
+    missedCallImage: `${SITE_URL}/images/email/missed-call-electrician.webp`,
+    appointmentImage: `${SITE_URL}/images/email/appointment-electrician.webp`,
     // Icons for email buttons (PNG for email client compatibility)
     phoneIcon: `${SITE_URL}/images/icons/phone-white.png`,
     whatsappIcon: `${SITE_URL}/images/icons/whatsapp-white.png`,
