@@ -10,12 +10,12 @@
 
 import { emailThemeColors } from './theme-colors'
 
-// Base URL for email images - must be publicly accessible
-// In production, set NEXT_PUBLIC_SITE_URL to your deployed domain
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://demo-elektriker.vercel.app'
+// Base URL for email images - MUST be the full public URL
+// Email clients require absolute URLs for images
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://elektriker.fabig-suite.de'
 
-// Website URL for footer links (can be different from SITE_URL if using custom domain)
-const WEBSITE_URL = process.env.EMAIL_WEBSITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://elektriker.fabig-suite.de'
+// Website URL for footer links
+const WEBSITE_URL = process.env.EMAIL_WEBSITE_URL || SITE_URL
 
 export interface BrandConfig {
   // Company Info
