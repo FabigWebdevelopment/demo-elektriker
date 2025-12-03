@@ -9,6 +9,7 @@ import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 import { FAQSection } from '@/components/seo/FAQSection'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Header } from '@/components/layout/Header'
 import { ServiceAreaMap } from '@/components/GoogleMap'
 import { ElectricianLogo } from '@/components/ElectricianLogo'
@@ -522,41 +523,61 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
         <div className="container mx-auto px-4 relative z-10">
           <AnimatedDiv animation="scaleUp">
-            <div className="max-w-4xl mx-auto bg-primary text-primary-foreground rounded-3xl p-12 md:p-16 shadow-2xl relative overflow-hidden">
+            <div className="max-w-5xl mx-auto bg-primary text-primary-foreground rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1),transparent_50%)]" />
 
-              <div className="relative z-10 text-center space-y-8">
-                <h2 className="text-4xl md:text-5xl font-bold">
-                  Bereit für Ihr Projekt?
-                </h2>
-                <p className="text-xl opacity-90 max-w-2xl mx-auto">
-                  Rufen Sie mich an oder schreiben Sie mir eine WhatsApp-Nachricht.
-                  Ich berate Sie gerne persönlich und erstelle Ihnen ein kostenloses Angebot.
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                  <Button size="lg" variant="secondary" className="text-lg px-8 group" asChild>
-                    <a href={`tel:${ceoProfile.phone}`}>
-                      <Phone className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                      {ceoProfile.phone}
-                    </a>
-                  </Button>
-                  <Button size="lg" variant="outline" className="text-lg px-8 bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
-                    <a href={`https://wa.me/${ceoProfile.whatsapp}`}>
-                      <WhatsAppIcon className="mr-2 h-5 w-5" />
-                      WhatsApp Chat
-                    </a>
-                  </Button>
+              <div className="relative z-10 grid md:grid-cols-[280px_1fr] gap-8 items-center">
+                {/* CEO Photo */}
+                <div className="hidden md:block">
+                  <div className="relative rounded-2xl overflow-hidden shadow-xl">
+                    <Image
+                      src="/demo-electrician/thomas-mueller-consulting.webp"
+                      alt={`${ceoProfile.name} - Ihr persönlicher Ansprechpartner`}
+                      width={280}
+                      height={350}
+                      className="object-cover"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                      <p className="font-semibold text-white">{ceoProfile.name}</p>
+                      <p className="text-sm text-white/80">{ceoProfile.title}</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8 text-sm opacity-75">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Antwort innerhalb 2 Stunden</span>
+                {/* CTA Content */}
+                <div className="space-y-6 text-center md:text-left">
+                  <h2 className="text-3xl md:text-4xl font-bold">
+                    Bereit für Ihr Projekt?
+                  </h2>
+                  <p className="text-lg opacity-90">
+                    Rufen Sie mich an oder schreiben Sie mir eine WhatsApp-Nachricht.
+                    Ich berate Sie gerne persönlich und erstelle Ihnen ein kostenloses Angebot.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-2">
+                    <Button size="lg" variant="secondary" className="text-lg px-8 group" asChild>
+                      <a href={`tel:${ceoProfile.phone}`}>
+                        <Phone className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                        {ceoProfile.phone}
+                      </a>
+                    </Button>
+                    <Button size="lg" variant="outline" className="text-lg px-8 bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
+                      <a href={`https://wa.me/${ceoProfile.whatsapp}`}>
+                        <WhatsAppIcon className="mr-2 h-5 w-5" />
+                        WhatsApp Chat
+                      </a>
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>In ganz München verfügbar</span>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-6 pt-4 text-sm opacity-75">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>Antwort innerhalb 2 Stunden</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>In ganz München verfügbar</span>
+                    </div>
                   </div>
                 </div>
               </div>

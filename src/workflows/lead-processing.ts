@@ -6,6 +6,12 @@ import {
   renderFollowUp3,
   renderOwnerNotification,
 } from "@/emails/render";
+import {
+  findTerminierenSlot,
+  normalizeLeadPriority,
+  formatSlotForDisplay,
+  type LeadPriority,
+} from "@/lib/scheduling";
 
 // =============================================================================
 // TYPES
@@ -105,6 +111,21 @@ const FUNNEL_CONFIG: Record<string, {
     source: "WALLBOX",
     estimatedValue: { min: 1500, avg: 3500, max: 8000 },
   },
+  "knx-beratung": {
+    name: "KNX Systemplanung",
+    source: "KNX",
+    estimatedValue: { min: 8000, avg: 25000, max: 80000 },
+  },
+  "loxone-beratung": {
+    name: "Loxone Beratung",
+    source: "LOXONE",
+    estimatedValue: { min: 10000, avg: 30000, max: 100000 },
+  },
+  "beleuchtung-beratung": {
+    name: "Intelligente Lichtplanung",
+    source: "BELEUCHTUNG",
+    estimatedValue: { min: 2000, avg: 8000, max: 30000 },
+  },
 };
 
 // Classification to probability mapping
@@ -171,7 +192,11 @@ function getExpectedCloseDate(classification: string): string {
   }
 }
 
-function getTaskDueDate(classification: string): string {
+/**
+ * @deprecated Use smart scheduler instead
+ * Kept for fallback if scheduler fails
+ */
+function getTaskDueDateFallback(classification: string): string {
   const now = new Date();
   switch (classification) {
     case "hot": return addDays(now, 0);   // Same day
@@ -620,6 +645,9 @@ async function createOpportunityInCRM(
     "elektro-anfrage": "ELEKTRO",
     "sicherheit-beratung": "SICHERHEIT",
     "wallbox-anfrage": "WALLBOX",
+    "knx-beratung": "KNX",
+    "loxone-beratung": "LOXONE",
+    "beleuchtung-beratung": "BELEUCHTUNG",
   };
 
   // Only include pointOfContactId if person was actually created in CRM (not local fallback)
@@ -776,13 +804,18 @@ async function createNoteInCRM(
 }
 
 /**
- * Create Task in Twenty CRM for owner follow-up
+ * Create "Terminieren" Task in Twenty CRM
  *
- * Priority and due date based on lead classification:
- * - HOT: Same day callback
- * - WARM: Next business day
- * - POTENTIAL: Within 3 days
- * - NURTURE: Within a week
+ * Goal: Schedule an appointment with the customer
+ * Uses smart scheduling to distribute tasks with capacity limits.
+ *
+ * Priority-based scheduling:
+ * - HOT: Same day if capacity, morning slots preferred
+ * - WARM: Within 1 business day
+ * - POTENTIAL: Within 3 business days
+ * - NURTURE: Within 7 business days, fills gaps
+ *
+ * After successful call → System creates "Termin" task automatically
  */
 async function createTaskInCRM(
   submission: LeadSubmission,
@@ -802,12 +835,51 @@ async function createTaskInCRM(
   const { firstName, lastName } = parseName(submission.contact.name);
   const customerName = lastName ? `${firstName} ${lastName}` : firstName;
   const emoji = getClassificationEmoji(classification);
+  const priority = normalizeLeadPriority(classification);
 
   // Format phone for tel: link (international format)
   const phoneForLink = submission.contact.phone
     ? submission.contact.phone.replace(/[^\d+]/g, "").replace(/^0/, "+49")
     : "";
   const phoneDisplay = submission.contact.phone || "Keine Telefonnummer";
+
+  // Use smart scheduler to find optimal DATE (owner decides time)
+  let scheduledDueDate: string;
+  let schedulingNote = "";
+
+  try {
+    const slotResult = await findTerminierenSlot(priority);
+
+    if (slotResult.success && slotResult.slot) {
+      // Set due date to end of business day (17:00) for the scheduled date
+      const dueDate = new Date(slotResult.slot.date);
+      dueDate.setHours(17, 0, 0, 0);
+      scheduledDueDate = dueDate.toISOString();
+
+      const displayDate = formatSlotForDisplay(slotResult.slot);
+
+      // Check if HOT lead bypassed capacity
+      if (slotResult.slot.bypassedCapacity && slotResult.dailySummary) {
+        schedulingNote = slotResult.dailySummary.message;
+        console.log(`HOT lead scheduled: ${displayDate} (${slotResult.dailySummary.totalCallsToday} calls today)`);
+      } else if (slotResult.capacityExtended) {
+        schedulingNote = `⚠️ Kapazität war voll, geplant für: ${displayDate}`;
+        console.log(`Task scheduled with extended deadline: ${displayDate}`);
+      } else {
+        schedulingNote = `📅 Geplant: ${displayDate}`;
+        console.log(`Task scheduled for: ${displayDate}`);
+      }
+    } else {
+      // Fallback to simple date calculation
+      console.log("Smart scheduler unavailable, using fallback");
+      scheduledDueDate = getTaskDueDateFallback(classification);
+      schedulingNote = "📅 Automatisch geplant";
+    }
+  } catch (error) {
+    console.error("Error in smart scheduler:", error);
+    scheduledDueDate = getTaskDueDateFallback(classification);
+    schedulingNote = "📅 Automatisch geplant";
+  }
 
   // Priority label based on classification
   const priorityLabel = {
@@ -818,19 +890,25 @@ async function createTaskInCRM(
   }[classification] || "📋 Lead kontaktieren";
 
   const taskData = {
-    title: `${emoji} Rückruf: ${customerName} - ${funnelName}`,
+    title: `${emoji} Terminieren: ${customerName} - ${funnelName}`,
     status: "TODO",
-    dueAt: getTaskDueDate(classification),
+    dueAt: scheduledDueDate,
     // Assign task to default workspace member
     assigneeId: DEFAULT_ASSIGNEE_ID,
-    // Custom field for call tracking
+    // Custom fields for task tracking
+    taskType: "TERMINIEREN",
+    prioritaet: priority.toUpperCase(),
     anrufStatus: "NEU",
     bodyV2: {
       markdown: [
-        `# ☎️ JETZT ANRUFEN`,
+        `# ☎️ TERMINIEREN`,
+        ``,
+        `**Ziel:** Termin beim Kunden vereinbaren`,
         ``,
         `## [📱 ${phoneDisplay}](tel:${phoneForLink})`,
         `*(Auf Mobilgerät: Tippen zum Anrufen)*`,
+        ``,
+        schedulingNote ? `> ${schedulingNote}` : "",
         ``,
         `---`,
         ``,
@@ -840,26 +918,30 @@ async function createTaskInCRM(
         `| **Name** | ${customerName} |`,
         `| **E-Mail** | ${submission.contact.email} |`,
         `| **Score** | ${totalScore}/100 (${classification.toUpperCase()}) |`,
-        `| **Funnel** | ${funnelName} |`,
+        `| **Projekt** | ${funnelName} |`,
         ``,
         `---`,
         ``,
         `## ${priorityLabel}`,
         ``,
         classification === "hot"
-          ? "> 🔥 **Heißer Lead!** Sofortiges Interesse signalisiert. Innerhalb von 1 Stunde anrufen für beste Abschlussrate."
+          ? "> 🔥 **Heißer Lead!** Sofortiges Interesse. Innerhalb von 1 Stunde anrufen!"
           : classification === "warm"
-          ? "> 📞 **Warmer Lead.** Gutes Interesse vorhanden. Heute noch Kontakt aufnehmen."
+          ? "> 📞 **Warmer Lead.** Heute noch Kontakt aufnehmen."
           : "> 📋 **Lead qualifizieren.** Interesse und Bedarf im Gespräch ermitteln.",
         ``,
         `---`,
         ``,
         `### Nach dem Anruf:`,
-        `Ändere den **Anruf-Status** oben:`,
-        `- 📵 "Nicht erreicht (1/2/3)" → Kunde erhält E-Mail`,
-        `- ✅ "Erreicht" → Gespräch geführt`,
-        `- 📅 "Termin vereinbart" → Termin-Datum ausfüllen!`,
-        `- ❌ "Kein Interesse" → Lead abgeschlossen`,
+        `Ändere den **Anruf-Status**:`,
+        ``,
+        `| Status | Aktion |`,
+        `|--------|--------|`,
+        `| 📅 **Termin vereinbart** | Termin-Datum + Uhrzeit ausfüllen! |`,
+        `| 📵 **Nicht erreicht** | System erstellt Follow-up |`,
+        `| ❌ **Kein Interesse** | Lead abgeschlossen |`,
+        ``,
+        `> **Bei Termin:** Nach Speichern wird automatisch eine Termin-Aufgabe erstellt!`,
       ].join("\n"),
       blocknote: null,
     },

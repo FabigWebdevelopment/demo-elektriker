@@ -10,6 +10,7 @@ import { RelatedServices } from '@/components/seo/CTASections'
 import { CtaContact } from '@/components/cta-contact'
 import { CtaService } from '@/components/cta-service'
 import { ImageSection } from '@/components/image-section'
+import { FunnelTriggerButton } from '@/components/funnel/FunnelTriggerButton'
 import { BenefitShowcase } from '@/components/benefit-showcase'
 import { MonthlyBillChart } from '@/components/charts/MonthlyBillChart'
 import { CostBreakdownChart } from '@/components/charts/CostBreakdownChart'
@@ -167,24 +168,19 @@ export default function LoxoneInstallationPage() {
 
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" asChild>
-                    <a href="tel:+4989123456789">
-                      <Phone className="mr-2 h-5 w-5" />
-                      089 123 456 789
-                    </a>
-                  </Button>
+                  <FunnelTriggerButton
+                    funnelId="loxone-beratung"
+                    className="text-lg px-8 shadow-lg"
+                    phoneNumber={ceoProfile.phone}
+                    whatsappNumber={ceoProfile.whatsapp}
+                  >
+                    Kostenlose Loxone Beratung
+                  </FunnelTriggerButton>
 
-                  <Button size="lg" variant="outline" asChild>
-                    <a href="https://wa.me/4989123456789" target="_blank" rel="noopener noreferrer">
-                      <WhatsAppIcon className="mr-2 h-5 w-5" />
+                  <Button size="lg" variant="outline" className="group" asChild>
+                    <a href={`https://wa.me/${ceoProfile.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hallo, ich interessiere mich für eine Loxone Installation.')}`}>
+                      <WhatsAppIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                       WhatsApp
-                    </a>
-                  </Button>
-
-                  <Button size="lg" variant="outline" asChild>
-                    <a href="mailto:info@mueller-elektro.de">
-                      <Mail className="mr-2 h-5 w-5" />
-                      E-Mail
                     </a>
                   </Button>
                 </div>
@@ -531,19 +527,36 @@ export default function LoxoneInstallationPage() {
         </section>
 
         {/* Pricing CTA Box */}
-        <CtaService
-          title="Kostenlose Loxone Demo & Beratung sichern"
-          description="Sie möchten Loxone live erleben? Vereinbaren Sie eine kostenlose Vor-Ort-Demo – wir zeigen Ihnen, wie Loxone funktioniert!"
-          buttonText="Demo vereinbaren"
-          buttonUrl="tel:+4989123456789"
-          phone="+49 89 1234 5678"
-          items={[
-            'Live-Demo mit Tablet',
-            'Kostenlose Vor-Ort-Beratung',
-            'Festpreis-Angebot',
-            'Zertifizierter Loxone Partner',
-          ]}
-        />
+        <section className="py-16 bg-primary/5">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto text-center">
+              <AnimatedDiv animation="slideUp">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  Kostenlose Loxone Demo & Beratung sichern
+                </h2>
+                <p className="text-xl text-muted-foreground mb-8">
+                  Sie möchten Loxone live erleben? Vereinbaren Sie eine kostenlose Vor-Ort-Demo – wir zeigen Ihnen, wie Loxone funktioniert!
+                </p>
+                <div className="flex flex-wrap justify-center gap-3 mb-8">
+                  {['Live-Demo mit Tablet', 'Kostenlose Vor-Ort-Beratung', 'Festpreis-Angebot', 'Zertifizierter Loxone Partner'].map((item) => (
+                    <span key={item} className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium">
+                      <Check className="h-4 w-4 text-primary" />
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <FunnelTriggerButton
+                  funnelId="loxone-beratung"
+                  className="text-lg px-8 shadow-lg"
+                  phoneNumber={ceoProfile.phone}
+                  whatsappNumber={ceoProfile.whatsapp}
+                >
+                  Kostenlose Loxone Beratung
+                </FunnelTriggerButton>
+              </AnimatedDiv>
+            </div>
+          </div>
+        </section>
 
         {/* Data Visualization Section */}
         <section className="py-24 bg-muted/30">

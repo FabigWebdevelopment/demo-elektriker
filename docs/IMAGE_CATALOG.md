@@ -205,6 +205,41 @@
 
 ---
 
+## TESTIMONIAL PERSONA IMAGES (Pending Generation)
+
+> **NOTE:** These images require `GOOGLE_GEMINI_API_KEY` to be set in `.env.local`
+> Run: `npx tsx scripts/generate-testimonial-images.ts`
+
+### testimonial-thomas-schmidt.webp
+- **Shows**: Man (40s) from behind/side in modern Munich living room, using tablet to control smart home
+- **Use For**: Thomas Schmidt testimonial, Smart Home/KNX customer review
+- **NOT For**: Other testimonials, service imagery
+- **Position**: `object-center`
+- **Approach**: Contextual silhouette (no clear face visible)
+
+### testimonial-martina-k.webp
+- **Shows**: Woman from behind/side in kitchen making coffee, morning after emergency was resolved
+- **Use For**: Martina K. testimonial, emergency service customer review
+- **NOT For**: Other testimonials, kitchen/appliance content
+- **Position**: `object-center`
+- **Approach**: Contextual silhouette (no clear face visible)
+
+### testimonial-stefan-k.webp
+- **Shows**: Man from behind/side at EV charging port, unplugging Tesla/VW ID after overnight charge
+- **Use For**: Stefan K. testimonial, wallbox/EV charging customer review
+- **NOT For**: EV service page hero, other testimonials
+- **Position**: `object-center`
+- **Approach**: Contextual silhouette (no clear face visible)
+
+### testimonial-anna-w.webp
+- **Shows**: Woman from behind/side in renovated Altbau apartment, looking out tall windows
+- **Use For**: Anna W. testimonial, Altbau renovation customer review
+- **NOT For**: Other testimonials, general renovation content
+- **Position**: `object-center`
+- **Approach**: Contextual silhouette (no clear face visible)
+
+---
+
 ## STILL MISSING - Future Generation
 
 *None currently - all required images generated*

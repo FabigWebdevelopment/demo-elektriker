@@ -9,6 +9,9 @@ export type FunnelId =
   | 'elektro-anfrage'
   | 'sicherheit-beratung'
   | 'wallbox-anfrage'
+  | 'knx-beratung'
+  | 'loxone-beratung'
+  | 'beleuchtung-beratung'
 
 export interface FunnelOption {
   id: string

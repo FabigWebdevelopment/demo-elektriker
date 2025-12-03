@@ -10,6 +10,7 @@ import { RelatedServices } from '@/components/seo/CTASections'
 import { CtaContact } from '@/components/cta-contact'
 import { CtaService } from '@/components/cta-service'
 import { ImageSection } from '@/components/image-section'
+import { FunnelTriggerButton } from '@/components/funnel/FunnelTriggerButton'
 import { ImageBanner } from '@/components/image-banner'
 import { BenefitShowcase } from '@/components/benefit-showcase'
 import { MonthlyBillChart } from '@/components/charts/MonthlyBillChart'
@@ -169,24 +170,19 @@ export default function KNXInstallationPage() {
 
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="group" asChild>
-                    <a href={`tel:${ceoProfile.phone.replace(/\s/g, '')}`}>
-                      <Phone className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                      {ceoProfile.phone}
-                    </a>
-                  </Button>
+                  <FunnelTriggerButton
+                    funnelId="knx-beratung"
+                    className="text-lg px-8 shadow-lg"
+                    phoneNumber={ceoProfile.phone}
+                    whatsappNumber={ceoProfile.whatsapp}
+                  >
+                    Kostenlose KNX Beratung
+                  </FunnelTriggerButton>
 
                   <Button size="lg" variant="outline" className="group" asChild>
-                    <a href={`https://wa.me/${ceoProfile.whatsapp.replace(/[^0-9]/g, '')}`}>
+                    <a href={`https://wa.me/${ceoProfile.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hallo, ich interessiere mich für eine KNX Installation.')}`}>
                       <WhatsAppIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                       WhatsApp
-                    </a>
-                  </Button>
-
-                  <Button size="lg" variant="outline" asChild>
-                    <a href={`mailto:${ceoProfile.email}`}>
-                      <Mail className="mr-2 h-5 w-5" />
-                      E-Mail
                     </a>
                   </Button>
                 </div>
@@ -486,19 +482,51 @@ export default function KNXInstallationPage() {
         </section>
 
         {/* Pricing CTA Box */}
-        <CtaService
-          title="Kostenlose KNX Erstberatung sichern"
-          description="Sie möchten wissen, was eine KNX Installation für Ihr Haus kostet? Vereinbaren Sie jetzt eine kostenlose Vor-Ort-Beratung."
-          buttonText="Beratungstermin vereinbaren"
-          buttonUrl="tel:+4989123456789"
-          phone="+49 89 1234 5678"
-          items={[
-            'Kostenlose Vor-Ort-Beratung',
-            'Maßgeschneidertes Angebot',
-            'Festpreis-Garantie',
-            'KNX-zertifiziert',
-          ]}
-        />
+        <section className="py-16 bg-primary text-primary-foreground">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-3xl font-bold mb-4">Kostenlose KNX Erstberatung sichern</h2>
+              <p className="text-lg opacity-90 mb-8">
+                Sie möchten wissen, was eine KNX Installation für Ihr Haus kostet? Starten Sie jetzt Ihre kostenlose Beratung.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="h-5 w-5" />
+                  <span>Kostenlose Vor-Ort-Beratung</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="h-5 w-5" />
+                  <span>Maßgeschneidertes Angebot</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="h-5 w-5" />
+                  <span>Festpreis-Garantie</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="h-5 w-5" />
+                  <span>KNX-zertifiziert</span>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <FunnelTriggerButton
+                  funnelId="knx-beratung"
+                  variant="secondary"
+                  className="text-lg px-8"
+                  phoneNumber={ceoProfile.phone}
+                  whatsappNumber={ceoProfile.whatsapp}
+                >
+                  Jetzt KNX Beratung starten
+                </FunnelTriggerButton>
+                <Button size="lg" className="text-lg px-8 bg-transparent border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
+                  <a href={`https://wa.me/${ceoProfile.whatsapp.replace(/[^0-9]/g, '')}`}>
+                    <WhatsAppIcon className="mr-2 h-5 w-5" />
+                    WhatsApp
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Data Visualization Section */}
         <section className="py-24 bg-muted/30">
