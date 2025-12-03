@@ -8,13 +8,18 @@
     "start": "next start",
     "lint": "eslint",
     "setup": "npx tsx scripts/setup.ts",
+    "setup:crm": "npx tsx scripts/setup-crm.ts",
     "apply-config": "npx tsx scripts/apply-config.ts",
     "generate-images": "npx tsx scripts/generate-demo-images.ts",
     "optimize-images": "npx tsx scripts/optimize-images.ts",
     "email:dev": "email dev --dir src/emails/templates --port 3030",
     "email:export": "npx tsx scripts/export-email-html.ts",
     "email:sync-theme": "npx tsx scripts/sync-email-theme.ts",
-    "generate-email-images": "npx tsx scripts/generate-email-images.ts"
+    "generate-email-images": "npx tsx scripts/generate-email-images.ts",
+    "onboard": "npx tsx scripts/onboard-client.ts",
+    "onboard:init": "npx tsx scripts/onboard-client.ts --init",
+    "onboard:next": "npx tsx scripts/onboard-client.ts --next",
+    "onboard:status": "npx tsx scripts/onboard-client.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

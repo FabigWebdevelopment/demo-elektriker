@@ -12,6 +12,7 @@ import { FollowUp3 } from './templates/FollowUp3'
 import { OwnerNotification } from './templates/OwnerNotification'
 import { MissedCall } from './templates/MissedCall'
 import { AppointmentConfirm } from './templates/AppointmentConfirm'
+import { ReviewRequest } from './templates/ReviewRequest'
 import { brandConfig } from './config/brand.config'
 import React from 'react'
 
@@ -275,5 +276,34 @@ export async function renderAppointmentConfirmation(
   return {
     html,
     subject: `⚡ Stromkreis geschlossen! Termin am ${appointmentDate}`,
+  }
+}
+
+/**
+ * Render Review Request Email (sent when project is completed)
+ *
+ * Gamified theme: "Stromkreis komplett!" with star rating CTA.
+ * Links to our review gate page, not directly to Google.
+ */
+export async function renderReviewRequest(
+  firstName: string,
+  projectDescription: string,
+  reviewToken: string
+): Promise<{ html: string; subject: string }> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://elektriker.fabig-suite.de'
+  const reviewUrl = `${siteUrl}/bewertung/${reviewToken}`
+
+  const html = await render(
+    React.createElement(ReviewRequest, {
+      firstName,
+      projectDescription,
+      reviewToken,
+      reviewUrl,
+    })
+  )
+
+  return {
+    html,
+    subject: `⭐ ${firstName}, Stromkreis komplett! Wie war Ihre Erfahrung?`,
   }
 }

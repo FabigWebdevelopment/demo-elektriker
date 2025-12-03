@@ -74,6 +74,8 @@ export interface BrandConfig {
     // Call tracking email images (themed for context)
     missedCallImage: string
     appointmentImage: string
+    // Review request email image
+    reviewRequestImage: string
     // Icons for email buttons
     phoneIcon: string
     whatsappIcon: string
@@ -163,6 +165,8 @@ export const brandConfig: BrandConfig = {
     // Call tracking email images
     missedCallImage: `${SITE_URL}/images/email/missed-call-electrician.webp`,
     appointmentImage: `${SITE_URL}/images/email/appointment-electrician.webp`,
+    // Review request email image
+    reviewRequestImage: `${SITE_URL}/images/email/review-request-electrician.webp`,
     // Icons for email buttons (PNG for email client compatibility)
     phoneIcon: `${SITE_URL}/images/icons/phone-white.png`,
     whatsappIcon: `${SITE_URL}/images/icons/whatsapp-white.png`,

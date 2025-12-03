@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { renderReviewRequest, getEmailSender } from '@/emails/render'
+import { randomUUID } from 'crypto'
 
 /**
  * Twenty CRM Webhook Handler
@@ -7,14 +9,19 @@ import { NextResponse } from 'next/server'
  * Settings → Developers → Webhooks → + Create webhook
  *
  * Endpunkt-URL: https://elektriker.fabig-suite.de/api/webhooks/twenty
- * Beschreibung: Automatische Follow-up Emails wenn Angebot gesendet wird
+ * Beschreibung: Automatische Emails bei Stage-Wechsel
  * Filter: Opportunity → Updated
+ *
+ * Handled Stages:
+ * - PROPOSAL: Follow-up emails nach Angebot
+ * - COMPLETED: Review-Anfrage nach Projektabschluss
  */
 
 const TWENTY_API_URL = process.env.TWENTY_CRM_API_URL || ''
 const TWENTY_API_KEY = process.env.TWENTY_API_KEY || ''
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const OWNER_EMAIL = process.env.NOTIFICATION_EMAIL || 'thomas@fabig.website'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://elektriker.fabig-suite.de'
 
 // Twenty webhook payload structure
 interface TwentyWebhookPayload {
@@ -99,6 +106,143 @@ function extractFunnelName(opportunityName: string): string {
   }
 
   return 'Elektroinstallation'
+}
+
+/**
+ * Update opportunity with review token
+ */
+async function updateOpportunityWithReviewToken(
+  opportunityId: string,
+  reviewToken: string
+): Promise<void> {
+  const apiUrl = getTwentyApiUrl()
+  if (!apiUrl || !TWENTY_API_KEY) return
+
+  try {
+    await fetch(`${apiUrl}/opportunities/${opportunityId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reviewToken,
+        reviewSentAt: new Date().toISOString(),
+      }),
+    })
+  } catch (error) {
+    console.error('Fehler beim Speichern des Review-Tokens:', error)
+  }
+}
+
+/**
+ * Update opportunity stage to REVIEW_SENT
+ */
+async function updateOpportunityStage(
+  opportunityId: string,
+  stage: string
+): Promise<void> {
+  const apiUrl = getTwentyApiUrl()
+  if (!apiUrl || !TWENTY_API_KEY) return
+
+  try {
+    await fetch(`${apiUrl}/opportunities/${opportunityId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${TWENTY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ stage }),
+    })
+  } catch (error) {
+    console.error('Fehler beim Aktualisieren der Stage:', error)
+  }
+}
+
+/**
+ * Send review request email when project is completed
+ */
+async function sendReviewRequest(
+  person: TwentyPerson,
+  opportunityId: string,
+  opportunityName: string
+): Promise<void> {
+  if (!RESEND_API_KEY) {
+    console.log('Resend nicht konfiguriert')
+    return
+  }
+
+  const firstName = person.name.firstName || 'Kunde'
+  const email = person.emails?.primaryEmail
+
+  if (!email) {
+    console.log('Keine E-Mail-Adresse für Bewertungsanfrage')
+    return
+  }
+
+  // Generate unique review token
+  const reviewToken = randomUUID()
+
+  // Save token to opportunity
+  await updateOpportunityWithReviewToken(opportunityId, reviewToken)
+
+  // Render the email
+  const { html, subject } = await renderReviewRequest(
+    firstName,
+    opportunityName,
+    reviewToken
+  )
+
+  const sender = getEmailSender()
+
+  // Send review request email
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: sender.from,
+      to: email,
+      replyTo: sender.replyTo,
+      subject,
+      html,
+    }),
+  })
+
+  // Update stage to REVIEW_SENT
+  await updateOpportunityStage(opportunityId, 'REVIEW_SENT')
+
+  // Notify owner
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Bewertungs-System <noreply@fabig.website>',
+      to: OWNER_EMAIL,
+      subject: `⭐ Bewertungsanfrage gesendet: ${person.name.firstName} ${person.name.lastName}`,
+      html: `
+<html>
+<body style="font-family: sans-serif; padding: 20px;">
+  <h2>⭐ Bewertungsanfrage gesendet</h2>
+  <p>Kunde <strong>${person.name.firstName} ${person.name.lastName}</strong> hat eine Bewertungsanfrage für das Projekt "<strong>${opportunityName}</strong>" erhalten.</p>
+  <p>📧 ${email}</p>
+  <div style="background: #f0fdf4; border: 1px solid #16a34a; border-radius: 8px; padding: 15px; margin: 15px 0;">
+    <p style="margin: 0;"><strong>Bewertungslink:</strong></p>
+    <p style="margin: 5px 0;"><a href="${SITE_URL}/bewertung/${reviewToken}">${SITE_URL}/bewertung/${reviewToken}</a></p>
+  </div>
+  <p style="color: #666; font-size: 14px;">Bei 4-5 Sternen wird der Kunde zu Google Reviews weitergeleitet. Bei 1-3 Sternen sammeln wir internes Feedback.</p>
+  <a href="https://crm.fabig-suite.de" style="background: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Im CRM öffnen</a>
+</body>
+</html>`,
+    }),
+  })
+
+  console.log(`✅ Bewertungsanfrage gesendet an ${email}`)
 }
 
 /**
@@ -233,12 +377,14 @@ export async function POST(request: Request) {
       })
     }
 
-    // Only trigger on PROPOSAL stage
-    if (payload.data.stage !== 'PROPOSAL') {
+    const stage = payload.data.stage
+
+    // Only trigger on PROPOSAL or COMPLETED stages
+    if (stage !== 'PROPOSAL' && stage !== 'COMPLETED') {
       return NextResponse.json({
         received: true,
         action: 'ignored',
-        reason: `Stage ist ${payload.data.stage}, nicht PROPOSAL`,
+        reason: `Stage ist ${stage}, nicht PROPOSAL oder COMPLETED`,
       })
     }
 
@@ -260,6 +406,27 @@ export async function POST(request: Request) {
       })
     }
 
+    // Handle COMPLETED stage → Send review request
+    if (stage === 'COMPLETED') {
+      console.log(`=== PROJEKT ABGESCHLOSSEN ===`)
+      console.log(`Kunde: ${person.name.firstName} ${person.name.lastName}`)
+      console.log(`E-Mail: ${person.emails.primaryEmail}`)
+      console.log(`Projekt: ${payload.data.name}`)
+      console.log(`Sende Bewertungsanfrage...`)
+      console.log(`=============================`)
+
+      await sendReviewRequest(person, payload.data.id, payload.data.name)
+
+      return NextResponse.json({
+        received: true,
+        action: 'review_request_sent',
+        opportunityId: payload.data.id,
+        contact: `${person.name.firstName} ${person.name.lastName}`,
+        hinweis: 'Bewertungsanfrage wurde gesendet',
+      })
+    }
+
+    // Handle PROPOSAL stage → Log for follow-up
     // For now, just log - the actual delayed emails would need a queue/cron system
     // TODO: Implement delayed sending via Vercel Workflow or external queue
     console.log(`=== PROPOSAL ERKANNT ===`)
@@ -290,7 +457,15 @@ export async function GET() {
     status: 'aktiv',
     endpoint: 'Twenty CRM Webhook',
     url: 'https://elektriker.fabig-suite.de/api/webhooks/twenty',
-    beschreibung: 'Erkennt wenn Opportunity auf PROPOSAL gesetzt wird',
+    beschreibung: 'Automatische Emails bei Stage-Wechsel (PROPOSAL & COMPLETED)',
+    triggers: {
+      PROPOSAL: 'Follow-up Emails nach Angebot',
+      COMPLETED: 'Bewertungsanfrage nach Projektabschluss → Smart Review Gate',
+    },
+    reviewGate: {
+      beschreibung: '4-5 Sterne → Google Review, 1-3 Sterne → Internes Feedback',
+      bewertungsSeite: `${SITE_URL}/bewertung/[token]`,
+    },
     anleitung: {
       step1: 'Twenty CRM öffnen → Settings → Developers → Webhooks',
       step2: 'Neuen Webhook erstellen',

@@ -1,10 +1,20 @@
 /**
- * Twenty CRM - Task Custom Fields für Anruf-Tracking
+ * Twenty CRM - Task Custom Fields für Smart Scheduling
  *
  * Erstellt die benötigten Felder auf dem Task-Objekt:
+ *
+ * TASK TYPE & SCHEDULING:
+ * - taskType (SELECT): TERMINIEREN, TERMIN, FOLLOW_UP, SONSTIGES
+ * - prioritaet (SELECT): HOT, WARM, POTENTIAL, NURTURE
+ *
+ * CALL TRACKING:
  * - anrufStatus (SELECT): Status des Anrufversuchs
+ *
+ * APPOINTMENT DETAILS:
  * - terminDatum (DATE): Datum des vereinbarten Termins
  * - terminUhrzeit (TEXT): Uhrzeit des Termins
+ * - terminDauer (NUMBER): Dauer in Minuten (default 60)
+ * - terminOrt (TEXT): Ort des Termins (Kundenadresse)
  *
  * Verwendung:
  * npx tsx scripts/setup-task-call-fields.ts
@@ -155,6 +165,40 @@ async function main() {
 
   // Step 3: Create custom fields
   const fieldsToCreate = [
+    // =========================================================================
+    // TASK TYPE & SCHEDULING
+    // =========================================================================
+    {
+      name: 'taskType',
+      label: 'Aufgabentyp',
+      type: 'SELECT',
+      icon: 'IconCategory',
+      description: 'Art der Aufgabe',
+      defaultValue: "'TERMINIEREN'",
+      options: [
+        { value: 'TERMINIEREN', label: '📞 Terminieren', color: 'blue', position: 0 },
+        { value: 'TERMIN', label: '📅 Termin', color: 'green', position: 1 },
+        { value: 'FOLLOW_UP', label: '🔄 Follow-up', color: 'orange', position: 2 },
+        { value: 'SONSTIGES', label: '📋 Sonstiges', color: 'gray', position: 3 },
+      ],
+    },
+    {
+      name: 'prioritaet',
+      label: 'Priorität',
+      type: 'SELECT',
+      icon: 'IconFlame',
+      description: 'Lead-Priorität (aus Scoring)',
+      options: [
+        { value: 'HOT', label: '🔥 Heiß', color: 'red', position: 0 },
+        { value: 'WARM', label: '🌡️ Warm', color: 'orange', position: 1 },
+        { value: 'POTENTIAL', label: '📊 Potenzial', color: 'yellow', position: 2 },
+        { value: 'NURTURE', label: '🌱 Nurture', color: 'green', position: 3 },
+      ],
+    },
+
+    // =========================================================================
+    // CALL TRACKING
+    // =========================================================================
     {
       name: 'anrufStatus',
       label: 'Anruf-Status',
@@ -171,6 +215,10 @@ async function main() {
         { value: 'KEIN_INTERESSE', label: '❌ Kein Interesse', color: 'gray', position: 5 },
       ],
     },
+
+    // =========================================================================
+    // APPOINTMENT DETAILS
+    // =========================================================================
     {
       name: 'terminDatum',
       label: 'Termin-Datum',
@@ -185,6 +233,22 @@ async function main() {
       type: 'TEXT',
       icon: 'IconClock',
       description: 'Uhrzeit des Termins (z.B. 14:00)',
+      isNullable: true,
+    },
+    {
+      name: 'terminDauer',
+      label: 'Dauer (Min)',
+      type: 'NUMBER',
+      icon: 'IconHourglass',
+      description: 'Dauer des Termins in Minuten (Standard: 60)',
+      isNullable: true,
+    },
+    {
+      name: 'terminOrt',
+      label: 'Termin-Ort',
+      type: 'TEXT',
+      icon: 'IconMapPin',
+      description: 'Adresse / Ort des Termins',
       isNullable: true,
     },
   ]

@@ -453,7 +453,128 @@ async function handleAppointmentBooked(
     }
   }
 
-  // 4. Send confirmation email to customer
+  // 4. Create "Termin" task for the appointment
+  console.log('Creating Termin task...')
+
+  const phoneDisplay = person?.phones?.primaryPhoneNumber
+    ? `+49 ${person.phones.primaryPhoneNumber}`
+    : 'Keine Telefonnummer'
+  const phoneForLink = person?.phones?.primaryPhoneNumber
+    ? `+49${person.phones.primaryPhoneNumber.replace(/[^\d]/g, '')}`
+    : ''
+
+  // Default duration: 60 minutes (1 hour)
+  const defaultDuration = 60
+
+  const terminTaskData = {
+    title: `📅 Termin: ${customerName} - ${opportunity.name}`,
+    status: 'TODO',
+    dueAt: eventDateTime,
+    assigneeId: process.env.TWENTY_DEFAULT_ASSIGNEE_ID || 'dc88ebed-29dc-4904-a745-37cd360af91b',
+    // Custom fields for Termin task
+    taskType: 'TERMIN',
+    terminDatum: appointmentDate,
+    terminUhrzeit: appointmentTime || '10:00',
+    terminDauer: defaultDuration,
+    terminOrt: 'Beim Kunden vor Ort', // Could be populated from opportunity/person address
+    bodyV2: {
+      markdown: [
+        `# 📅 KUNDENTERMIN`,
+        ``,
+        `## Kundendetails`,
+        `| | |`,
+        `|---|---|`,
+        `| **Name** | ${customerName} |`,
+        person?.emails?.primaryEmail ? `| **E-Mail** | ${person.emails.primaryEmail} |` : '',
+        `| **Telefon** | [${phoneDisplay}](tel:${phoneForLink}) |`,
+        `| **Projekt** | ${opportunity.name} |`,
+        ``,
+        `---`,
+        ``,
+        `## Termin-Details`,
+        `| | |`,
+        `|---|---|`,
+        `| **Datum** | ${formattedDate} |`,
+        `| **Uhrzeit** | ${appointmentTime ? formatGermanTime(appointmentTime) : '10:00 Uhr'} |`,
+        `| **Dauer** | ${defaultDuration} Minuten |`,
+        `| **Ort** | Beim Kunden vor Ort |`,
+        ``,
+        notes ? `> **Notizen:** ${notes}` : '',
+        ``,
+        `---`,
+        ``,
+        `## Vorbereitung Checkliste`,
+        `- [ ] Kundendaten geprüft`,
+        `- [ ] Anfahrt geplant`,
+        `- [ ] Werkzeug/Material vorbereitet`,
+        `- [ ] Angebot/Unterlagen dabei`,
+        ``,
+        `---`,
+        ``,
+        `## Nach dem Termin`,
+        `Task-Status aktualisieren:`,
+        `- ✅ **Erledigt** → Projekt startet`,
+        `- 🔄 **Verschoben** → Neuen Termin anlegen`,
+        `- ❌ **Abgesagt** → Grund dokumentieren`,
+      ].filter(Boolean).join('\n'),
+      blocknote: null,
+    },
+  }
+
+  const terminTaskResponse = await fetch(`${apiUrl}/tasks`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${TWENTY_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(terminTaskData),
+  })
+
+  const terminTaskText = await terminTaskResponse.text()
+  console.log(`Termin task response (${terminTaskResponse.status}):`, terminTaskText.slice(0, 300))
+
+  if (terminTaskResponse.ok) {
+    const terminTaskResult = JSON.parse(terminTaskText)
+    const terminTask = extractCreatedEntity(terminTaskResult)
+
+    if (terminTask?.id) {
+      console.log(`✅ Termin task created: ${terminTask.id}`)
+
+      // Link task to opportunity
+      await fetch(`${apiUrl}/taskTargets`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TWENTY_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskId: terminTask.id,
+          opportunityId: opportunity.id,
+        }),
+      })
+
+      // Link task to person if available
+      if (person?.id) {
+        await fetch(`${apiUrl}/taskTargets`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${TWENTY_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            taskId: terminTask.id,
+            personId: person.id,
+          }),
+        })
+      }
+
+      console.log('✅ Termin task linked to opportunity and person')
+    }
+  } else {
+    console.error('❌ Failed to create Termin task:', terminTaskText)
+  }
+
+  // 5. Send confirmation email to customer
   if (person?.emails?.primaryEmail && RESEND_API_KEY) {
     console.log('Sending appointment confirmation email...')
 

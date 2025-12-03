@@ -386,6 +386,9 @@ npm run setup
 # Setup from JSON file (e.g., from Google Forms)
 npm run setup -- --data=./client.json
 
+# CRM Setup (after creating Twenty workspace)
+npm run setup:crm
+
 # Generate AI images for client
 npm run generate-images
 
@@ -395,6 +398,162 @@ npm run dev
 # Production build
 npm run build
 ```
+
+---
+
+## CRM Setup Workflow
+
+### Philosophy
+
+**Everything managed by Next.js project** — minimal manual CRM work.
+
+The setup script configures CRM via API:
+- German object labels (Kontakt, Anfrage, Aufgabe)
+- Pipeline stages (Neue Anfrage → Kunde gewonnen)
+- Custom fields (leadScore, funnelSource, anrufStatus)
+- Task status options
+
+**Manual setup only for:**
+- Dashboard views (API permissions limited)
+- Workflows with form inputs (appointment booking)
+
+### Setup Process
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     CRM SETUP WORKFLOW                          │
+└─────────────────────────────────────────────────────────────────┘
+
+1. CREATE WORKSPACE
+   └─▶ Twenty CRM → Create new workspace for client
+   └─▶ Generate API Key (Settings → Developers)
+
+2. CONFIGURE ENV
+   └─▶ Add to .env:
+       TWENTY_CRM_API_URL=https://crm.client.de/rest
+       TWENTY_API_KEY=eyJhbGciOiJIUzI1NiIs...
+
+3. RUN SETUP SCRIPT (5 minutes)
+   └─▶ npm run setup:crm
+   └─▶ Configures: objects, fields, labels, stages
+
+4. MANUAL VIEWS (10 minutes)
+   └─▶ Create "📞 Rückrufe Heute" view
+   └─▶ Create "💼 Pipeline" kanban view
+   └─▶ Create "🔥 Heiße Leads" view
+
+5. MANUAL WORKFLOW (5 minutes)
+   └─▶ Create "Termin buchen" workflow
+   └─▶ Trigger: Manual on Task
+   └─▶ Form: Termin date input
+   └─▶ Webhook: POST to /api/call-status
+
+See docs/CRM_SETUP_GUIDE.md for detailed instructions.
+```
+
+### What Gets Configured Automatically
+
+| Category | Items |
+|----------|-------|
+| **Object Labels** | Kontakt, Unternehmen, Anfrage, Aufgabe, Notiz |
+| **Pipeline Stages** | Neue Anfrage → In Bearbeitung → Termin → Angebot → Kunde |
+| **Task Status** | Zu erledigen, In Bearbeitung, Erledigt |
+| **Opportunity Fields** | leadScore, leadClassification, funnelSource, estimatedValue, urgency |
+| **Person Fields** | gdprConsent, preferredContact |
+| **Task Fields** | anrufStatus, termin, terminDatum, terminUhrzeit |
+
+### CRM Automation Split
+
+| Location | Automation Type | Examples |
+|----------|-----------------|----------|
+| **Next.js** | API-triggered workflows | Lead processing, email sequences, follow-ups |
+| **Twenty CRM** | Form-based workflows | Appointment booking (requires date input) |
+
+The split exists because Twenty workflows can prompt for form input (e.g., appointment date), while Next.js handles automated sequences triggered by webhooks.
+
+---
+
+## Client Onboarding Orchestration
+
+### The Challenge
+
+When transforming the demo site into a client site, multiple agents work on different aspects:
+- Customer Psychology creates buyer personas
+- Art Director defines Visual DNA
+- Conversion Copywriter writes German copy
+- UI Designer structures pages
+- Image Generation creates visuals
+- Frontend Developer implements code
+
+**Problem:** Each agent works in isolation without shared brand understanding.
+
+### The Solution: Visual DNA + Orchestrated Workflow
+
+Every client project has a **Visual DNA file** that contains:
+- Brand personality & tone
+- Image style guidelines (lighting, colors, mood)
+- Target customer psychology
+- Conversion goals
+- Quality standards
+
+This file is passed to EVERY agent, ensuring consistency.
+
+### Orchestration Commands
+
+```bash
+# Initialize new client onboarding
+npm run onboard:init -- new-client --name "Müller Elektro"
+
+# Show current status & progress
+npm run onboard:status
+
+# Get next task with full agent prompt
+npm run onboard:next
+
+# Mark task as complete
+npm run onboard -- --complete task-id
+```
+
+### Workflow Phases
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 1: SETUP                                                   │
+│ Clone repo, install deps, configure CRM                         │
+├─────────────────────────────────────────────────────────────────┤
+│ PHASE 2: FOUNDATION                                              │
+│ Create Visual DNA, buyer persona, service mapping               │
+├─────────────────────────────────────────────────────────────────┤
+│ PHASE 3: PAGES                                                   │
+│ For each page: Copy → Design → Images → Implement               │
+├─────────────────────────────────────────────────────────────────┤
+│ PHASE 4: QA                                                      │
+│ Conversion audit, SEO audit, Lighthouse, mobile testing         │
+├─────────────────────────────────────────────────────────────────┤
+│ PHASE 5: LAUNCH                                                  │
+│ Deploy, domain, Search Console, directories                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `data/visual-dna.template.ts` | Brand & image guidelines template |
+| `data/onboarding-workflow.template.ts` | Task workflow template |
+| `prompts/context-bundle.md` | Agent context templates |
+| `scripts/onboard-client.ts` | Orchestrator CLI |
+| `.onboarding/state.json` | Progress tracking |
+
+### Agent Context Strategy
+
+Every agent receives:
+1. **Visual DNA** - Brand personality, image style, quality standards
+2. **Buyer Persona** - Pain points, desires, objections
+3. **Page Context** - Purpose, sections, reference demo page
+4. **Output Format** - Exactly what to produce
+
+See `docs/CLIENT_ORCHESTRATION_SYSTEM.md` for full architecture.
 
 ---
 
@@ -648,8 +807,10 @@ Before launching any client site:
 | `docs/IMAGE_PROMPT_TEMPLATES.md` | Generating AI images |
 | `docs/CLIENT_BUILD_CHECKLIST.md` | Pre-launch verification |
 | `docs/MULTI_REPO_ARCHITECTURE.md` | System architecture |
-| `docs/TWENTY_CRM_API_CUSTOMIZATION.md` | **CRM API customization** (German labels, fields, setup) |
+| `docs/CRM_SETUP_GUIDE.md` | **CRM setup: automatic + manual steps** |
+| `docs/TWENTY_CRM_API_CUSTOMIZATION.md` | CRM API customization (German labels, fields) |
 | `docs/TWENTY_CRM_GERMAN_SETUP.md` | German workspace configuration details |
+| `docs/CLIENT_ORCHESTRATION_SYSTEM.md` | **Client onboarding orchestration architecture** |
 
 ---
 

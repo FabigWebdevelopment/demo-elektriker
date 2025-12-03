@@ -285,6 +285,64 @@ CRITICAL:
 - Build trust and personal connection
 - Professional but warm`,
   },
+  {
+    id: 'review-request-electrician',
+    filename: 'review-request-electrician.png',
+    prompt: `REFERENCE IMAGE: Use the exact face, features, and likeness of the person in the reference image provided.
+
+Generate a professional photograph of this person as a German electrician celebrating a completed project with a satisfied expression.
+
+SCENE SETUP:
+- Professional electrician standing proudly in a beautiful finished smart home
+- Modern, elegant interior with visible smart home elements (touchscreens, elegant switches, ambient lighting)
+- Clean, completed project environment - no tools or work materials visible
+- Wearing clean professional work attire, perhaps slightly more relaxed/celebratory
+
+POSE & EXPRESSION:
+- Warm, genuine smile showing satisfaction and pride
+- Open, welcoming body language
+- Hands may be gesturing in a "completed!" or "thank you" manner
+- Perhaps a subtle thumbs up or open palm gesture
+- Confident but humble posture
+- Direct but warm eye contact with camera
+
+BACKGROUND:
+- Stunning modern German home interior
+- Visible completed smart home installation (elegant wall panels, ambient lighting on)
+- Warm, inviting atmosphere with soft lighting
+- Quality of finished project clearly evident
+- Perhaps golden hour lighting through windows
+
+LIGHTING:
+- Warm, celebratory natural light
+- Soft rim light creating professional depth
+- Inviting, accomplished feeling
+
+PHOTOGRAPHY STYLE:
+- Professional commercial photography
+- Hero shot composition - celebrating completion
+- Warm color grading, golden tones
+- 16:9 aspect ratio
+- Sharp focus on face and expression
+
+MOOD & MESSAGE:
+- "Project successfully completed - thank you for trusting us!"
+- Celebration, gratitude, professional pride
+- Inviting the customer to share their experience
+- Warmth and genuine appreciation
+
+THEME (Gamification):
+- "Stromkreis komplett!" (Circuit complete!)
+- The visual should convey the satisfaction of a job well done
+- Electrician as a trusted partner, not just a service provider
+
+CRITICAL:
+- Face MUST match reference image exactly
+- Convey genuine gratitude and professional accomplishment
+- Environment should look like a premium finished project
+- NO tools, NO work in progress - this is COMPLETION celebration
+- Expression should invite positive feedback without being pushy`,
+  },
 ]
 
 /**
