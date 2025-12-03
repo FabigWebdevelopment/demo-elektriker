@@ -376,6 +376,8 @@ export async function POST(request: Request) {
     console.log(`Opportunity: ${payload.record.name || 'unknown'}`)
     console.log(`Stage: ${payload.record.stage || 'unknown'}`)
     console.log(`Updated fields: ${payload.updatedFields?.join(', ') || 'none'}`)
+    console.log(`Record keys: ${Object.keys(payload.record).join(', ')}`)
+    console.log(`Full record: ${JSON.stringify(payload.record, null, 2)}`)
     console.log('======================')
 
     // Only process opportunity updates (Twenty format: objectName.action)
