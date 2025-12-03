@@ -27,7 +27,7 @@ Diese Anleitung beschreibt das **einfache Anruf-Tracking System** für Twenty CR
 
 ---
 
-## Opportunity Stages (5 Stufen)
+## Opportunity Stages (6 Stufen)
 
 Der Lead durchläuft automatisch diese Stages:
 
@@ -47,6 +47,10 @@ NEUE_ANFRAGE ─────┬────────────────�
                   ▼                                            │
            KUNDE_GEWONNEN
             (Deal gewonnen)
+                  │
+                  ▼
+           ABGESCHLOSSEN
+            (Projekt fertig)
 ```
 
 | Stage | Bedeutung | Wie erreicht |
@@ -54,7 +58,8 @@ NEUE_ANFRAGE ─────┬────────────────�
 | NEUE_ANFRAGE | Frischer Lead | Automatisch bei Funnel-Eingang |
 | FOLLOW_UP | E-Mails wurden gesendet | Automatisch bei "Nicht erreicht (1)" |
 | TERMIN_VEREINBART | Termin steht | Automatisch bei "Termin vereinbart" |
-| KUNDE_GEWONNEN | Deal abgeschlossen | Manuell durch Inhaber |
+| KUNDE_GEWONNEN | Deal gewonnen | Manuell durch Inhaber |
+| ABGESCHLOSSEN | Projekt fertig | Manuell durch Inhaber (nach Abschluss der Arbeiten) |
 | VERLOREN | Kein Abschluss | Automatisch bei "Kein Interesse" oder 3x nicht erreicht |
 
 ---
@@ -90,12 +95,13 @@ Die folgenden Felder wurden bereits auf dem Task-Objekt erstellt:
 
 ### Schritt 2: Opportunity Stages aktualisiert ✅
 
-Die Stages wurden auf 5 reduziert:
-- NEUE_ANFRAGE
-- FOLLOW_UP
-- TERMIN_VEREINBART
-- KUNDE_GEWONNEN
-- VERLOREN
+Die Stages wurden auf 6 erweitert:
+- NEUE_ANFRAGE (Lead erstellt)
+- FOLLOW_UP (E-Mails gesendet)
+- TERMIN_VEREINBART (Termin gebucht)
+- KUNDE_GEWONNEN (Deal gewonnen)
+- ABGESCHLOSSEN (Projekt fertig)
+- VERLOREN (Kein Abschluss)
 
 ### Schritt 3: Workflows erstellen
 

@@ -137,7 +137,7 @@ const CLASSIFICATION_PROBABILITY: Record<string, number> = {
 };
 
 // Classification to CRM stage mapping (matches German CRM setup)
-// Valid stages: NEUE_ANFRAGE, FOLLOW_UP, TERMIN_VEREINBART, KUNDE_GEWONNEN, VERLOREN
+// Valid stages: NEUE_ANFRAGE, FOLLOW_UP, TERMIN_VEREINBART, KUNDE_GEWONNEN, ABGESCHLOSSEN, VERLOREN
 const CLASSIFICATION_STAGE: Record<string, string> = {
   hot: "NEUE_ANFRAGE",       // Hot leads start as new, urgency field handles priority
   warm: "NEUE_ANFRAGE",      // Neue Anfrage
