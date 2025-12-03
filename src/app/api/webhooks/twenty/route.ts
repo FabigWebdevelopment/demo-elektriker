@@ -407,15 +407,19 @@ export async function POST(request: Request) {
 
     // Fetch contact data
     if (!payload.record.pointOfContactId) {
+      console.log(`⚠️ SKIPPED: Opportunity "${payload.record.name}" hat keine verknüpfte Kontaktperson`)
+      console.log(`→ Bitte im CRM unter "Point of Contact" einen Kontakt auswählen`)
       return NextResponse.json({
         received: true,
         action: 'skipped',
-        reason: 'Keine Kontaktperson verknüpft',
+        reason: 'Keine Kontaktperson verknüpft - bitte im CRM "Point of Contact" setzen',
       })
     }
 
+    console.log(`Kontakt-ID: ${payload.record.pointOfContactId}`)
     const person = await fetchPersonFromCRM(payload.record.pointOfContactId)
     if (!person || !person.emails?.primaryEmail) {
+      console.log(`⚠️ SKIPPED: Kontakt nicht gefunden oder keine E-Mail-Adresse`)
       return NextResponse.json({
         received: true,
         action: 'skipped',
