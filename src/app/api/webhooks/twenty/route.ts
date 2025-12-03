@@ -23,10 +23,15 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const OWNER_EMAIL = process.env.NOTIFICATION_EMAIL || 'thomas@fabig.website'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://elektriker.fabig-suite.de'
 
-// Twenty webhook payload structure
+// Twenty webhook payload structure (actual format from Twenty CRM)
 interface TwentyWebhookPayload {
-  event: string
-  data: {
+  eventName: string
+  objectMetadata: {
+    id: string
+    nameSingular: string
+    namePlural: string
+  }
+  record: {
     id: string
     name: string
     stage: string
@@ -34,7 +39,10 @@ interface TwentyWebhookPayload {
     updatedAt: string
     createdAt: string
   }
-  timestamp: string
+  updatedFields?: string[]
+  workspaceId: string
+  webhookId: string
+  eventDate: string
 }
 
 // Person data from Twenty API
@@ -351,45 +359,54 @@ export async function POST(request: Request) {
     const payload = await request.json()
 
     console.log('=== TWENTY WEBHOOK ===')
-    console.log(`Event: ${payload.event || 'unknown'}`)
+    console.log(`Event: ${payload.eventName || 'unknown'}`)
     console.log(`Payload keys: ${Object.keys(payload).join(', ')}`)
 
-    // Validate payload structure
-    if (!payload.event || !payload.data) {
+    // Validate payload structure (Twenty CRM sends eventName and record)
+    if (!payload.eventName || !payload.record) {
       console.log('Invalid payload structure, ignoring')
       return NextResponse.json({
         received: true,
         action: 'ignored',
-        reason: 'Invalid payload - missing event or data',
+        reason: 'Invalid payload - missing eventName or record',
       })
     }
 
-    console.log(`Opportunity: ${payload.data.name || 'unknown'}`)
-    console.log(`Stage: ${payload.data.stage || 'unknown'}`)
+    console.log(`Object: ${payload.objectMetadata?.nameSingular || 'unknown'}`)
+    console.log(`Opportunity: ${payload.record.name || 'unknown'}`)
+    console.log(`Stage: ${payload.record.stage || 'unknown'}`)
+    console.log(`Updated fields: ${payload.updatedFields?.join(', ') || 'none'}`)
     console.log('======================')
 
-    // Only process opportunity updates
-    if (payload.event !== 'opportunity.updated') {
+    // Only process opportunity updates (Twenty format: objectName.action)
+    const isOpportunityUpdate =
+      payload.objectMetadata?.nameSingular === 'opportunity' &&
+      payload.eventName.includes('.updated')
+
+    if (!isOpportunityUpdate) {
       return NextResponse.json({
         received: true,
         action: 'ignored',
-        reason: `Event ist ${payload.event}, nicht opportunity.updated`,
+        reason: `Event ist ${payload.eventName} (${payload.objectMetadata?.nameSingular}), nicht opportunity.updated`,
       })
     }
 
-    const stage = payload.data.stage
+    const stage = payload.record.stage
 
-    // Only trigger on PROPOSAL or COMPLETED stages
-    if (stage !== 'PROPOSAL' && stage !== 'COMPLETED') {
+    // Only trigger on specific stages:
+    // - PROPOSAL: Follow-up emails for quotes
+    // - COMPLETED/ABGESCHLOSSEN: Review request after project completion
+    const validStages = ['PROPOSAL', 'COMPLETED', 'ABGESCHLOSSEN']
+    if (!validStages.includes(stage)) {
       return NextResponse.json({
         received: true,
         action: 'ignored',
-        reason: `Stage ist ${stage}, nicht PROPOSAL oder COMPLETED`,
+        reason: `Stage ist ${stage}, nicht PROPOSAL, COMPLETED oder ABGESCHLOSSEN`,
       })
     }
 
     // Fetch contact data
-    if (!payload.data.pointOfContactId) {
+    if (!payload.record.pointOfContactId) {
       return NextResponse.json({
         received: true,
         action: 'skipped',
@@ -397,7 +414,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const person = await fetchPersonFromCRM(payload.data.pointOfContactId)
+    const person = await fetchPersonFromCRM(payload.record.pointOfContactId)
     if (!person || !person.emails?.primaryEmail) {
       return NextResponse.json({
         received: true,
@@ -406,21 +423,21 @@ export async function POST(request: Request) {
       })
     }
 
-    // Handle COMPLETED stage → Send review request
-    if (stage === 'COMPLETED') {
+    // Handle COMPLETED or ABGESCHLOSSEN stage → Send review request
+    if (stage === 'COMPLETED' || stage === 'ABGESCHLOSSEN') {
       console.log(`=== PROJEKT ABGESCHLOSSEN ===`)
       console.log(`Kunde: ${person.name.firstName} ${person.name.lastName}`)
       console.log(`E-Mail: ${person.emails.primaryEmail}`)
-      console.log(`Projekt: ${payload.data.name}`)
+      console.log(`Projekt: ${payload.record.name}`)
       console.log(`Sende Bewertungsanfrage...`)
       console.log(`=============================`)
 
-      await sendReviewRequest(person, payload.data.id, payload.data.name)
+      await sendReviewRequest(person, payload.record.id, payload.record.name)
 
       return NextResponse.json({
         received: true,
         action: 'review_request_sent',
-        opportunityId: payload.data.id,
+        opportunityId: payload.record.id,
         contact: `${person.name.firstName} ${person.name.lastName}`,
         hinweis: 'Bewertungsanfrage wurde gesendet',
       })
@@ -438,7 +455,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       received: true,
       action: 'proposal_erkannt',
-      opportunityId: payload.data.id,
+      opportunityId: payload.record.id,
       contact: `${person.name.firstName} ${person.name.lastName}`,
       hinweis: 'Follow-up Emails werden automatisch gesendet',
     })
@@ -457,10 +474,19 @@ export async function GET() {
     status: 'aktiv',
     endpoint: 'Twenty CRM Webhook',
     url: 'https://elektriker.fabig-suite.de/api/webhooks/twenty',
-    beschreibung: 'Automatische Emails bei Stage-Wechsel (PROPOSAL & COMPLETED)',
+    beschreibung: 'Automatische Emails bei Stage-Wechsel',
     triggers: {
       PROPOSAL: 'Follow-up Emails nach Angebot',
       COMPLETED: 'Bewertungsanfrage nach Projektabschluss → Smart Review Gate',
+      ABGESCHLOSSEN: 'Bewertungsanfrage nach Projektabschluss → Smart Review Gate',
+    },
+    payloadFormat: {
+      hinweis: 'Twenty CRM sendet eventName und record (nicht event und data)',
+      beispiel: {
+        eventName: 'opportunity.updated',
+        objectMetadata: { nameSingular: 'opportunity' },
+        record: { id: '...', name: '...', stage: 'ABGESCHLOSSEN' },
+      },
     },
     reviewGate: {
       beschreibung: '4-5 Sterne → Google Review, 1-3 Sterne → Internes Feedback',
