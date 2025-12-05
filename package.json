@@ -19,7 +19,15 @@
     "onboard": "npx tsx scripts/onboard-client.ts",
     "onboard:init": "npx tsx scripts/onboard-client.ts --init",
     "onboard:next": "npx tsx scripts/onboard-client.ts --next",
-    "onboard:status": "npx tsx scripts/onboard-client.ts"
+    "onboard:status": "npx tsx scripts/onboard-client.ts",
+    "client:new": "npx tsx scripts/cli/new-client.ts",
+    "client:status": "npx tsx scripts/cli/verify-all.ts",
+    "client:verify": "npx tsx scripts/cli/verify-all.ts",
+    "analyze": "npx tsx scripts/cli/analyze.ts",
+    "analyze:page": "npx tsx scripts/cli/analyze.ts --page",
+    "analyze:seo": "npx tsx scripts/cli/analyze.ts --seo",
+    "verify:all": "npx tsx scripts/cli/verify-all.ts",
+    "verify:feature": "npx tsx scripts/cli/verify-all.ts --feature"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
