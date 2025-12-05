@@ -1,0 +1,95 @@
+{
+  "projectId": "demo-elektriker",
+  "lastUpdated": "2024-12-05T17:00:00Z",
+  "description": "Feature tracking with explicit pass/fail states. A feature is NOT complete until passes: true.",
+  "features": [
+    {
+      "id": "crm-integration",
+      "category": "infrastructure",
+      "description": "Twenty CRM integration for lead management",
+      "priority": 1,
+      "status": "in-progress",
+      "passes": false,
+      "verification": {
+        "api": "CRM API responds to authenticated requests",
+        "webhook": "Webhook receives and processes opportunity updates",
+        "contact": "Contact data is retrieved from opportunity"
+      },
+      "tests": [
+        "curl -H 'Authorization: Bearer $TWENTY_API_KEY' $TWENTY_CRM_API_URL/people?limit=1"
+      ],
+      "failureReason": "Webhook receives payload but pointOfContactId field is empty - need to find correct field name"
+    },
+    {
+      "id": "funnel-submission",
+      "category": "functional",
+      "description": "Lead capture funnels submit to CRM and trigger emails",
+      "priority": 2,
+      "status": "complete",
+      "passes": true,
+      "verification": {
+        "form": "Funnel form submits successfully",
+        "crm": "Lead appears in Twenty CRM",
+        "email": "Confirmation email sent to customer",
+        "notification": "Owner receives notification"
+      },
+      "tests": [],
+      "failureReason": null
+    },
+    {
+      "id": "review-request",
+      "category": "automation",
+      "description": "Review request sent when opportunity marked ABGESCHLOSSEN",
+      "priority": 3,
+      "status": "in-progress",
+      "passes": false,
+      "verification": {
+        "trigger": "Webhook fires on ABGESCHLOSSEN stage change",
+        "contact": "Contact email retrieved from opportunity",
+        "email": "Review request email sent with unique token",
+        "crm-update": "Review token saved to opportunity"
+      },
+      "tests": [],
+      "failureReason": "Blocked by crm-integration - contact lookup not working"
+    },
+    {
+      "id": "home-page",
+      "category": "pages",
+      "description": "Home page with hero, services, testimonials, FAQ",
+      "priority": 10,
+      "status": "complete",
+      "passes": true,
+      "verification": {
+        "visual": "All sections render correctly",
+        "mobile": "Responsive on 375px",
+        "cta": "CTAs link to funnels",
+        "lighthouse": "Score > 90"
+      },
+      "tests": [],
+      "failureReason": null
+    },
+    {
+      "id": "service-pages",
+      "category": "pages",
+      "description": "All service pages with funnels",
+      "priority": 11,
+      "status": "complete",
+      "passes": true,
+      "verification": {
+        "pages": "All 4 main services + sub-pages exist",
+        "funnels": "Each page has appropriate funnel",
+        "seo": "Meta tags and schema present"
+      },
+      "tests": [],
+      "failureReason": null
+    }
+  ],
+  "rules": {
+    "completion": "A feature is NOT complete until all verification criteria pass and passes: true",
+    "forbidden": [
+      "Marking passes: true without verification",
+      "Removing tests to make them pass",
+      "Ignoring failureReason when present"
+    ]
+  }
+}
