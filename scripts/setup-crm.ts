@@ -148,13 +148,6 @@ const TASK_STATUS_OPTIONS = [
 // Custom fields for Opportunity
 const OPPORTUNITY_CUSTOM_FIELDS = [
   {
-    name: 'linkedPersonId',
-    label: 'Kontakt-ID',
-    type: 'TEXT',
-    description: 'ID der verknüpften Kontaktperson (für Webhook-Zugriff)',
-    icon: 'IconUser',
-  },
-  {
     name: 'leadScore',
     label: 'Lead-Bewertung',
     type: 'NUMBER',
