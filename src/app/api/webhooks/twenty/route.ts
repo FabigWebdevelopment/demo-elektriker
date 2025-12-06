@@ -36,8 +36,7 @@ interface TwentyWebhookPayload {
     id: string
     name: string
     stage: string
-    pointOfContactId?: string
-    linkedPersonId?: string // Custom field to store person ID (webhooks don't include relations)
+    pointOfContactId?: string // Standard field linking to Person
     updatedAt: string
     createdAt: string
   }
@@ -546,23 +545,21 @@ export async function POST(request: Request) {
       })
     }
 
-    // Fetch contact data - try linkedPersonId first (custom field), then pointOfContactId (relation)
-    // Note: Webhooks don't include relation data, so linkedPersonId is stored as a custom field
-    const personId = payload.record.linkedPersonId || payload.record.pointOfContactId
+    // Get the linked contact from the standard pointOfContactId field
+    const personId = payload.record.pointOfContactId
 
     if (!personId) {
       console.log(`⚠️ SKIPPED: Opportunity "${payload.record.name}" hat keine verknüpfte Kontaktperson`)
-      console.log(`→ Weder linkedPersonId noch pointOfContactId im Webhook vorhanden`)
-      console.log(`→ Für neue Leads wird linkedPersonId automatisch gesetzt`)
+      console.log(`→ Für neue Leads wird pointOfContactId automatisch gesetzt`)
       console.log(`→ Für bestehende Opportunities: Im CRM "Point of Contact" setzen`)
       return NextResponse.json({
         received: true,
         action: 'skipped',
-        reason: 'Keine Kontaktperson verknüpft - linkedPersonId oder pointOfContactId fehlt',
+        reason: 'Keine Kontaktperson verknüpft (pointOfContactId fehlt)',
       })
     }
 
-    console.log(`Kontakt-ID: ${personId} (source: ${payload.record.linkedPersonId ? 'linkedPersonId' : 'pointOfContactId'})`)
+    console.log(`Kontakt-ID: ${personId}`)
     const person = await fetchPersonFromCRM(personId)
 
     if (!person || !person.emails?.primaryEmail) {
