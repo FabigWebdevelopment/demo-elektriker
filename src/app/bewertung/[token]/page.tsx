@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, Send, ExternalLink, CheckCircle2, MessageSquare, Zap } from 'lucide-react'
+import { Star, Send, CheckCircle2, MessageSquare, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { reviewConfig } from '@/config/review.config'
@@ -13,8 +13,8 @@ import { reviewConfig } from '@/config/review.config'
  *
  * Smart review collection that:
  * 1. Asks for rating first (1-5 stars)
- * 2. If 4-5 stars → Redirects to Google Reviews
- * 3. If 1-3 stars → Shows feedback form (internal only)
+ * 2. If 4-5 stars → Directly opens Google Reviews (no intermediate step)
+ * 3. If 1-3 stars → Shows feedback form, sends warning to owner
  *
  * This protects the Google rating while still collecting valuable feedback.
  */
@@ -22,7 +22,7 @@ export default function ReviewPage() {
   const params = useParams()
   const token = params.token as string
 
-  const [step, setStep] = useState<'rating' | 'feedback' | 'google' | 'thankyou'>('rating')
+  const [step, setStep] = useState<'rating' | 'feedback' | 'thankyou'>('rating')
   const [rating, setRating] = useState<number>(0)
   const [hoveredRating, setHoveredRating] = useState<number>(0)
   const [feedback, setFeedback] = useState('')
@@ -31,22 +31,40 @@ export default function ReviewPage() {
   // Google Review URL from config
   const googleReviewUrl = reviewConfig.social.google
 
-  const handleRatingSelect = (selectedRating: number) => {
+  const handleRatingSelect = async (selectedRating: number) => {
     setRating(selectedRating)
 
-    // Small delay for visual feedback
-    setTimeout(() => {
-      if (selectedRating >= 4) {
-        // Happy customer → Show Google redirect
-        setStep('google')
-      } else {
-        // Unhappy customer → Show feedback form
+    if (selectedRating >= 4) {
+      // Happy customer → Directly open Google Reviews and log
+      // Small delay for visual feedback on star selection
+      setTimeout(async () => {
+        // Log to API (fire and forget)
+        fetch('/api/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            rating: selectedRating,
+            feedback: '',
+            redirectedToGoogle: true,
+          }),
+        }).catch(console.error)
+
+        // Open Google Reviews immediately
+        window.open(googleReviewUrl, '_blank')
+        setStep('thankyou')
+      }, 400)
+    } else {
+      // Unhappy customer → Show feedback form
+      setTimeout(() => {
         setStep('feedback')
-      }
-    }, 500)
+      }, 400)
+    }
   }
 
   const handleFeedbackSubmit = async () => {
+    if (!feedback.trim()) return
+
     setIsSubmitting(true)
 
     try {
@@ -69,28 +87,6 @@ export default function ReviewPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const handleGoogleRedirect = async () => {
-    // Log that user is going to Google
-    try {
-      await fetch('/api/review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          rating,
-          feedback: '',
-          redirectedToGoogle: true,
-        }),
-      })
-    } catch (error) {
-      console.error('Error logging Google redirect:', error)
-    }
-
-    // Open Google Reviews in new tab
-    window.open(googleReviewUrl, '_blank')
-    setStep('thankyou')
   }
 
   return (
@@ -232,71 +228,7 @@ export default function ReviewPage() {
                 </motion.div>
               )}
 
-              {/* Step 2b: Google Redirect (for 4-5 stars) */}
-              {step === 'google' && (
-                <motion.div
-                  key="google"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="text-center"
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', delay: 0.1 }}
-                    className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4"
-                  >
-                    <CheckCircle2 className="w-8 h-8 text-green-600" />
-                  </motion.div>
-
-                  <h2 className="text-xl font-semibold mb-2">
-                    Vielen Dank!
-                  </h2>
-                  <p className="text-muted-foreground mb-2">
-                    Wir freuen uns sehr über Ihre positive Bewertung!
-                  </p>
-
-                  {/* Show selected rating */}
-                  <div className="flex justify-center gap-1 mb-6">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-6 h-6 ${
-                          star <= rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-muted-foreground/30'
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  <div className="bg-muted/50 rounded-lg p-4 mb-6">
-                    <p className="text-sm text-muted-foreground">
-                      Möchten Sie Ihre positive Erfahrung auch auf Google teilen?
-                      Das hilft anderen Kunden, den richtigen Elektriker zu finden.
-                    </p>
-                  </div>
-
-                  <Button
-                    onClick={handleGoogleRedirect}
-                    className="w-full mb-3"
-                    size="lg"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Auf Google bewerten
-                  </Button>
-
-                  <button
-                    onClick={() => setStep('thankyou')}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Vielleicht später
-                  </button>
-                </motion.div>
-              )}
-
-              {/* Step 3: Thank You */}
+              {/* Step 2b: Thank You (shown after Google redirect or feedback submission) */}
               {step === 'thankyou' && (
                 <motion.div
                   key="thankyou"
