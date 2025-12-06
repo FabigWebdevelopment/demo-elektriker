@@ -141,7 +141,7 @@ export const OwnerNotification = ({
                   <tr>
                     <td>
                       <strong style={{ color: c.c, fontSize: '16px' }}>{c.e} {c.l}</strong>
-                      <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>• Score: {leadScore}/100</span>
+                      <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>• Score: {leadScore}</span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <span style={{ color: c.c, fontSize: '12px', fontWeight: 'bold' }}>{c.desc}</span>
