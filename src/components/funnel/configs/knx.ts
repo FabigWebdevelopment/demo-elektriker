@@ -86,33 +86,12 @@ export const knxFunnelConfig: FunnelConfig = {
       ],
     },
 
-    // Step 4: Contact
-    {
-      id: 'contact',
-      type: 'contact',
-      title: 'Deine KNX Beratung wartet!',
-      subtitle: 'Wohin dürfen wir deine persönliche Empfehlung senden?',
-      valueProposition: [
-        'Individuelle KNX Systemplanung',
-        'Realistische Kostenschätzung',
-        'Empfehlung passender KNX-Geräte',
-        'Kostenloser Vor-Ort-Termin',
-      ],
-      fields: [
-        { name: 'name', label: 'Dein Name', type: 'text', required: true, placeholder: 'Max Mustermann' },
-        { name: 'email', label: 'E-Mail Adresse', type: 'email', required: true, placeholder: 'max@beispiel.de', validation: 'email' },
-        { name: 'phone', label: 'Telefon', type: 'tel', required: true, placeholder: '089 1234567', validation: 'phone' },
-        { name: 'plz', label: 'Postleitzahl', type: 'plz', required: true, placeholder: '80331', validation: 'plz' },
-      ],
-      gdprText: 'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
-    },
-
-    // Step 5: Optional - Existing System & Property Size
+    // Step 4: Optional - Existing System & Property Size
     {
       id: 'deep-qualification',
       type: 'optional-qualification',
       title: 'Noch 2 Fragen für eine präzisere Planung',
-      skipText: 'Überspringen und absenden',
+      skipText: 'Überspringen',
       questions: [
         {
           fieldName: 'propertySize',
@@ -135,6 +114,27 @@ export const knxFunnelConfig: FunnelConfig = {
           ],
         },
       ],
+    },
+
+    // Step 5: Contact (Final Step)
+    {
+      id: 'contact',
+      type: 'contact',
+      title: 'Deine KNX Beratung wartet!',
+      subtitle: 'Wohin dürfen wir deine persönliche Empfehlung senden?',
+      valueProposition: [
+        'Individuelle KNX Systemplanung',
+        'Realistische Kostenschätzung',
+        'Empfehlung passender KNX-Geräte',
+        'Kostenloser Vor-Ort-Termin',
+      ],
+      fields: [
+        { name: 'name', label: 'Dein Name', type: 'text', required: true, placeholder: 'Max Mustermann' },
+        { name: 'email', label: 'E-Mail Adresse', type: 'email', required: true, placeholder: 'max@beispiel.de', validation: 'email' },
+        { name: 'phone', label: 'Telefon', type: 'tel', required: true, placeholder: '089 1234567', validation: 'phone' },
+        { name: 'plz', label: 'Postleitzahl', type: 'plz', required: true, placeholder: '80331', validation: 'plz' },
+      ],
+      gdprText: 'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
     },
   ],
 

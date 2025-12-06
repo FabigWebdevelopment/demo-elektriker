@@ -132,67 +132,12 @@ export const sicherheitFunnelConfig: FunnelConfig = {
       ],
     },
 
-    // Step 4: Contact Capture
-    {
-      id: 'contact',
-      type: 'contact',
-      title: 'Wir erstellen dir ein individuelles Sicherheitskonzept',
-      valueProposition: [
-        'Persönliche Schwachstellen-Analyse',
-        'Empfehlung für passende Technik',
-        'Unverbindliches Angebot mit Festpreis',
-        'Infos zu Versicherungsrabatten',
-      ],
-      fields: [
-        {
-          name: 'name',
-          label: 'Dein Name',
-          type: 'text',
-          required: true,
-          placeholder: 'Max Mustermann',
-        },
-        {
-          name: 'email',
-          label: 'E-Mail Adresse',
-          type: 'email',
-          required: true,
-          placeholder: 'max@beispiel.de',
-          validation: 'email',
-        },
-        {
-          name: 'phone',
-          label: 'Telefon',
-          type: 'tel',
-          required: true,
-          placeholder: '089 1234567',
-          validation: 'phone',
-        },
-        {
-          name: 'plz',
-          label: 'Postleitzahl',
-          type: 'plz',
-          required: true,
-          placeholder: '80331',
-          validation: 'plz',
-        },
-        {
-          name: 'address',
-          label: 'Straße (für bessere Einschätzung)',
-          type: 'text',
-          required: false,
-          placeholder: 'Musterstraße 123',
-        },
-      ],
-      gdprText:
-        'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Deine Daten sind bei uns sicher.',
-    },
-
-    // Step 5: Urgency & Existing System (Optional)
+    // Step 4: Urgency & Existing System (Optional)
     {
       id: 'urgency',
       type: 'optional-qualification',
       title: 'Noch zwei Fragen für ein präziseres Angebot',
-      skipText: 'Überspringen und absenden',
+      skipText: 'Überspringen',
       questions: [
         {
           fieldName: 'timeline',
@@ -256,6 +201,61 @@ export const sicherheitFunnelConfig: FunnelConfig = {
           ],
         },
       ],
+    },
+
+    // Step 5: Contact Capture (Final Step)
+    {
+      id: 'contact',
+      type: 'contact',
+      title: 'Wir erstellen dir ein individuelles Sicherheitskonzept',
+      valueProposition: [
+        'Persönliche Schwachstellen-Analyse',
+        'Empfehlung für passende Technik',
+        'Unverbindliches Angebot mit Festpreis',
+        'Infos zu Versicherungsrabatten',
+      ],
+      fields: [
+        {
+          name: 'name',
+          label: 'Dein Name',
+          type: 'text',
+          required: true,
+          placeholder: 'Max Mustermann',
+        },
+        {
+          name: 'email',
+          label: 'E-Mail Adresse',
+          type: 'email',
+          required: true,
+          placeholder: 'max@beispiel.de',
+          validation: 'email',
+        },
+        {
+          name: 'phone',
+          label: 'Telefon',
+          type: 'tel',
+          required: true,
+          placeholder: '089 1234567',
+          validation: 'phone',
+        },
+        {
+          name: 'plz',
+          label: 'Postleitzahl',
+          type: 'plz',
+          required: true,
+          placeholder: '80331',
+          validation: 'plz',
+        },
+        {
+          name: 'address',
+          label: 'Straße (für bessere Einschätzung)',
+          type: 'text',
+          required: false,
+          placeholder: 'Musterstraße 123',
+        },
+      ],
+      gdprText:
+        'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Deine Daten sind bei uns sicher.',
     },
   ],
 

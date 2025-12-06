@@ -74,33 +74,12 @@ export const loxoneFunnelConfig: FunnelConfig = {
       ],
     },
 
-    // Step 4: Contact
-    {
-      id: 'contact',
-      type: 'contact',
-      title: 'Deine persönliche Loxone Beratung',
-      subtitle: 'Ein zertifizierter Loxone Partner berät dich kostenlos',
-      valueProposition: [
-        'Individuelle Loxone Konfiguration',
-        'Preisindikation für dein Projekt',
-        'Showroom-Besuch möglich',
-        'Kostenlose Vor-Ort-Beratung',
-      ],
-      fields: [
-        { name: 'name', label: 'Dein Name', type: 'text', required: true, placeholder: 'Max Mustermann' },
-        { name: 'email', label: 'E-Mail Adresse', type: 'email', required: true, placeholder: 'max@beispiel.de', validation: 'email' },
-        { name: 'phone', label: 'Telefon', type: 'tel', required: true, placeholder: '089 1234567', validation: 'phone' },
-        { name: 'plz', label: 'Postleitzahl', type: 'plz', required: true, placeholder: '80331', validation: 'plz' },
-      ],
-      gdprText: 'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
-    },
-
-    // Step 5: Optional - Current Setup & Budget
+    // Step 4: Optional - Current Setup & Budget
     {
       id: 'deep-qualification',
       type: 'optional-qualification',
       title: 'Noch 2 Fragen für eine präzisere Empfehlung',
-      skipText: 'Überspringen und absenden',
+      skipText: 'Überspringen',
       questions: [
         {
           fieldName: 'existingSystem',
@@ -123,6 +102,27 @@ export const loxoneFunnelConfig: FunnelConfig = {
           ],
         },
       ],
+    },
+
+    // Step 5: Contact (Final Step)
+    {
+      id: 'contact',
+      type: 'contact',
+      title: 'Deine persönliche Loxone Beratung',
+      subtitle: 'Ein zertifizierter Loxone Partner berät dich kostenlos',
+      valueProposition: [
+        'Individuelle Loxone Konfiguration',
+        'Preisindikation für dein Projekt',
+        'Showroom-Besuch möglich',
+        'Kostenlose Vor-Ort-Beratung',
+      ],
+      fields: [
+        { name: 'name', label: 'Dein Name', type: 'text', required: true, placeholder: 'Max Mustermann' },
+        { name: 'email', label: 'E-Mail Adresse', type: 'email', required: true, placeholder: 'max@beispiel.de', validation: 'email' },
+        { name: 'phone', label: 'Telefon', type: 'tel', required: true, placeholder: '089 1234567', validation: 'phone' },
+        { name: 'plz', label: 'Postleitzahl', type: 'plz', required: true, placeholder: '80331', validation: 'plz' },
+      ],
+      gdprText: 'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
     },
   ],
 

@@ -157,68 +157,12 @@ export const elektroFunnelConfig: FunnelConfig = {
       ],
     },
 
-    // Step 4: Contact Capture
-    {
-      id: 'contact',
-      type: 'contact',
-      title: 'Wir erstellen dir ein unverbindliches Angebot',
-      subtitle: 'Mit Festpreisgarantie',
-      valueProposition: [
-        'Kostenlose Vor-Ort-Beratung',
-        'Detailliertes Angebot mit Festpreis',
-        'Zeitplan für die Installation',
-        'VDE-Prüfprotokoll inklusive',
-      ],
-      fields: [
-        {
-          name: 'name',
-          label: 'Dein Name',
-          type: 'text',
-          required: true,
-          placeholder: 'Max Mustermann',
-        },
-        {
-          name: 'email',
-          label: 'E-Mail Adresse',
-          type: 'email',
-          required: true,
-          placeholder: 'max@beispiel.de',
-          validation: 'email',
-        },
-        {
-          name: 'phone',
-          label: 'Telefon',
-          type: 'tel',
-          required: true,
-          placeholder: '089 1234567',
-          validation: 'phone',
-        },
-        {
-          name: 'plz',
-          label: 'Postleitzahl',
-          type: 'plz',
-          required: true,
-          placeholder: '80331',
-          validation: 'plz',
-        },
-        {
-          name: 'address',
-          label: 'Adresse (optional)',
-          type: 'text',
-          required: false,
-          placeholder: 'Musterstraße 123',
-        },
-      ],
-      gdprText:
-        'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
-    },
-
-    // Step 5: Optional Building Details
+    // Step 4: Optional Building Details
     {
       id: 'building-details',
       type: 'optional-qualification',
       title: 'Noch ein paar Details für ein präziseres Angebot',
-      skipText: 'Überspringen und absenden',
+      skipText: 'Überspringen',
       questions: [
         {
           fieldName: 'buildingAge',
@@ -287,6 +231,62 @@ export const elektroFunnelConfig: FunnelConfig = {
           ],
         },
       ],
+    },
+
+    // Step 5: Contact Capture (Final Step)
+    {
+      id: 'contact',
+      type: 'contact',
+      title: 'Wir erstellen dir ein unverbindliches Angebot',
+      subtitle: 'Mit Festpreisgarantie',
+      valueProposition: [
+        'Kostenlose Vor-Ort-Beratung',
+        'Detailliertes Angebot mit Festpreis',
+        'Zeitplan für die Installation',
+        'VDE-Prüfprotokoll inklusive',
+      ],
+      fields: [
+        {
+          name: 'name',
+          label: 'Dein Name',
+          type: 'text',
+          required: true,
+          placeholder: 'Max Mustermann',
+        },
+        {
+          name: 'email',
+          label: 'E-Mail Adresse',
+          type: 'email',
+          required: true,
+          placeholder: 'max@beispiel.de',
+          validation: 'email',
+        },
+        {
+          name: 'phone',
+          label: 'Telefon',
+          type: 'tel',
+          required: true,
+          placeholder: '089 1234567',
+          validation: 'phone',
+        },
+        {
+          name: 'plz',
+          label: 'Postleitzahl',
+          type: 'plz',
+          required: true,
+          placeholder: '80331',
+          validation: 'plz',
+        },
+        {
+          name: 'address',
+          label: 'Adresse (optional)',
+          type: 'text',
+          required: false,
+          placeholder: 'Musterstraße 123',
+        },
+      ],
+      gdprText:
+        'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
     },
   ],
 

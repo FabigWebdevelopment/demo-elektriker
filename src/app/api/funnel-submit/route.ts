@@ -25,6 +25,9 @@ export async function POST(request: Request) {
       'elektro-anfrage',
       'sicherheit-beratung',
       'wallbox-anfrage',
+      'knx-beratung',
+      'loxone-beratung',
+      'beleuchtung-beratung',
     ]
     if (!validFunnelIds.includes(submission.funnelId)) {
       console.log('=== FUNNEL-SUBMIT: Invalid funnel ID ===', submission.funnelId)

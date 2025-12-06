@@ -157,61 +157,12 @@ export const smartHomeFunnelConfig: FunnelConfig = {
       ],
     },
 
-    // Step 4: Contact Capture (The Exchange)
-    {
-      id: 'contact',
-      type: 'contact',
-      title: 'Fast geschafft!',
-      subtitle: 'Wohin dürfen wir dein Ergebnis schicken?',
-      valueProposition: [
-        'Grobe Preisindikation für dein Projekt',
-        'Empfehlung: KNX, Loxone oder Alternative',
-        'Typische Projektdauer',
-        'Nächste Schritte',
-      ],
-      fields: [
-        {
-          name: 'name',
-          label: 'Dein Name',
-          type: 'text',
-          required: true,
-          placeholder: 'Max Mustermann',
-        },
-        {
-          name: 'email',
-          label: 'E-Mail Adresse',
-          type: 'email',
-          required: true,
-          placeholder: 'max@beispiel.de',
-          validation: 'email',
-        },
-        {
-          name: 'phone',
-          label: 'Telefon (für Rückfragen)',
-          type: 'tel',
-          required: true,
-          placeholder: '089 1234567',
-          validation: 'phone',
-        },
-        {
-          name: 'plz',
-          label: 'Postleitzahl',
-          type: 'plz',
-          required: true,
-          placeholder: '80331',
-          validation: 'plz',
-        },
-      ],
-      gdprText:
-        'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
-    },
-
-    // Step 5: Deep Qualification (After Commitment - Optional)
+    // Step 4: Deep Qualification (Optional - before contact)
     {
       id: 'deep-qualification',
       type: 'optional-qualification',
       title: 'Noch 2 kurze Fragen für eine präzisere Einschätzung',
-      skipText: 'Überspringen und absenden',
+      skipText: 'Überspringen',
       questions: [
         {
           fieldName: 'propertySize',
@@ -258,6 +209,55 @@ export const smartHomeFunnelConfig: FunnelConfig = {
           ],
         },
       ],
+    },
+
+    // Step 5: Contact Capture (Final Step)
+    {
+      id: 'contact',
+      type: 'contact',
+      title: 'Fast geschafft!',
+      subtitle: 'Wohin dürfen wir dein Ergebnis schicken?',
+      valueProposition: [
+        'Grobe Preisindikation für dein Projekt',
+        'Empfehlung: KNX, Loxone oder Alternative',
+        'Typische Projektdauer',
+        'Nächste Schritte',
+      ],
+      fields: [
+        {
+          name: 'name',
+          label: 'Dein Name',
+          type: 'text',
+          required: true,
+          placeholder: 'Max Mustermann',
+        },
+        {
+          name: 'email',
+          label: 'E-Mail Adresse',
+          type: 'email',
+          required: true,
+          placeholder: 'max@beispiel.de',
+          validation: 'email',
+        },
+        {
+          name: 'phone',
+          label: 'Telefon (für Rückfragen)',
+          type: 'tel',
+          required: true,
+          placeholder: '089 1234567',
+          validation: 'phone',
+        },
+        {
+          name: 'plz',
+          label: 'Postleitzahl',
+          type: 'plz',
+          required: true,
+          placeholder: '80331',
+          validation: 'plz',
+        },
+      ],
+      gdprText:
+        'Ich stimme zu, dass meine Daten zur Bearbeitung meiner Anfrage gespeichert werden. Mehr in unserer Datenschutzerklärung.',
     },
   ],
 
