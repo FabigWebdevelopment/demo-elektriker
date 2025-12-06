@@ -91,7 +91,14 @@ async function fetchPersonFromCRM(personId: string): Promise<TwentyPerson | null
 
     const data = await response.json()
     // Twenty CRM returns { person: {...} } for single person lookup
-    return data.person || data.data || data
+    // Extract the inner person object
+    if (data.person) {
+      return data.person
+    }
+    if (data.data) {
+      return data.data
+    }
+    return data
   } catch (error) {
     console.error('Fehler beim Laden des Kontakts:', error)
     return null
@@ -435,13 +442,11 @@ export async function POST(request: Request) {
     console.log(`Kontakt-ID: ${personId} (source: ${payload.record.linkedPersonId ? 'linkedPersonId' : 'pointOfContactId'})`)
     const person = await fetchPersonFromCRM(personId)
 
-    // Debug: Log the full person object to understand structure
-    console.log(`Person data: ${JSON.stringify(person, null, 2)}`)
+    // Debug: Log extracted person data
+    console.log(`Person extracted - Name: ${person?.name?.firstName} ${person?.name?.lastName}, Email: ${person?.emails?.primaryEmail}`)
 
     if (!person || !person.emails?.primaryEmail) {
       console.log(`⚠️ SKIPPED: Kontakt nicht gefunden oder keine E-Mail-Adresse`)
-      console.log(`→ person exists: ${!!person}`)
-      console.log(`→ person.emails: ${JSON.stringify(person?.emails)}`)
       return NextResponse.json({
         received: true,
         action: 'skipped',
