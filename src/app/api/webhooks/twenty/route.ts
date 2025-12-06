@@ -90,7 +90,8 @@ async function fetchPersonFromCRM(personId: string): Promise<TwentyPerson | null
     }
 
     const data = await response.json()
-    return data.data || data
+    // Twenty CRM returns { person: {...} } for single person lookup
+    return data.person || data.data || data
   } catch (error) {
     console.error('Fehler beim Laden des Kontakts:', error)
     return null
