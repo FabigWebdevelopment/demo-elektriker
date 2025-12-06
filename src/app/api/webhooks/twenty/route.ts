@@ -433,8 +433,14 @@ export async function POST(request: Request) {
 
     console.log(`Kontakt-ID: ${personId} (source: ${payload.record.linkedPersonId ? 'linkedPersonId' : 'pointOfContactId'})`)
     const person = await fetchPersonFromCRM(personId)
+
+    // Debug: Log the full person object to understand structure
+    console.log(`Person data: ${JSON.stringify(person, null, 2)}`)
+
     if (!person || !person.emails?.primaryEmail) {
       console.log(`⚠️ SKIPPED: Kontakt nicht gefunden oder keine E-Mail-Adresse`)
+      console.log(`→ person exists: ${!!person}`)
+      console.log(`→ person.emails: ${JSON.stringify(person?.emails)}`)
       return NextResponse.json({
         received: true,
         action: 'skipped',
