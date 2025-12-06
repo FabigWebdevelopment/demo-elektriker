@@ -70,6 +70,108 @@ function getTwentyApiUrl(): string {
 }
 
 /**
+ * Extract person entity from Twenty CRM response
+ *
+ * Twenty CRM REST API returns different structures:
+ * - Single entity: { "person": {...} } or { "data": { "person": {...} } }
+ * - Composite fields may be nested OR flattened (name.firstName vs nameFirstName)
+ */
+function extractPersonFromResponse(responseData: Record<string, unknown>): Record<string, unknown> | null {
+  // Try common wrapper patterns
+  let person: Record<string, unknown> | null = null
+
+  // Pattern 1: { data: { person: {...} } } - GraphQL-style
+  if (responseData.data && typeof responseData.data === 'object') {
+    const dataObj = responseData.data as Record<string, unknown>
+    if (dataObj.person && typeof dataObj.person === 'object') {
+      person = dataObj.person as Record<string, unknown>
+      console.log(`Extracted from data.person`)
+    } else if (dataObj.id) {
+      // Pattern 2: { data: {...personFields} }
+      person = dataObj
+      console.log(`Extracted from data (direct fields)`)
+    }
+  }
+
+  // Pattern 3: { person: {...} } - REST-style
+  if (!person && responseData.person && typeof responseData.person === 'object') {
+    person = responseData.person as Record<string, unknown>
+    console.log(`Extracted from person`)
+  }
+
+  // Pattern 4: Direct fields (no wrapper)
+  if (!person && responseData.id) {
+    person = responseData
+    console.log(`Extracted from root (no wrapper)`)
+  }
+
+  return person
+}
+
+/**
+ * Normalize person data to TwentyPerson interface
+ *
+ * Handles both nested and flattened field formats:
+ * - Nested: { name: { firstName: "X", lastName: "Y" }, emails: { primaryEmail: "Z" } }
+ * - Flattened: { nameFirstName: "X", nameLastName: "Y", emailsPrimaryEmail: "Z" }
+ */
+function normalizePersonData(raw: Record<string, unknown>): TwentyPerson | null {
+  console.log(`Raw person keys: ${Object.keys(raw).join(', ')}`)
+
+  const id = raw.id as string
+  if (!id) {
+    console.error(`No id found in person data`)
+    return null
+  }
+
+  // Extract name - try nested first, then flattened
+  let firstName = ''
+  let lastName = ''
+
+  if (raw.name && typeof raw.name === 'object') {
+    const nameObj = raw.name as Record<string, string>
+    firstName = nameObj.firstName || ''
+    lastName = nameObj.lastName || ''
+    console.log(`Name from nested: ${firstName} ${lastName}`)
+  } else {
+    // Flattened format: nameFirstName, nameLastName
+    firstName = (raw.nameFirstName || raw['name.firstName'] || '') as string
+    lastName = (raw.nameLastName || raw['name.lastName'] || '') as string
+    console.log(`Name from flattened: ${firstName} ${lastName}`)
+  }
+
+  // Extract email - try nested first, then flattened
+  let primaryEmail = ''
+
+  if (raw.emails && typeof raw.emails === 'object') {
+    const emailsObj = raw.emails as Record<string, string>
+    primaryEmail = emailsObj.primaryEmail || ''
+    console.log(`Email from nested: ${primaryEmail}`)
+  } else {
+    // Flattened format: emailsPrimaryEmail
+    primaryEmail = (raw.emailsPrimaryEmail || raw['emails.primaryEmail'] || raw.email || '') as string
+    console.log(`Email from flattened: ${primaryEmail}`)
+  }
+
+  // Extract phone - try nested first, then flattened
+  let primaryPhone = ''
+
+  if (raw.phones && typeof raw.phones === 'object') {
+    const phonesObj = raw.phones as Record<string, string>
+    primaryPhone = phonesObj.primaryPhoneNumber || ''
+  } else {
+    primaryPhone = (raw.phonesPrimaryPhoneNumber || raw['phones.primaryPhoneNumber'] || raw.phone || '') as string
+  }
+
+  return {
+    id,
+    name: { firstName, lastName },
+    emails: { primaryEmail },
+    phones: { primaryPhoneNumber: primaryPhone },
+  }
+}
+
+/**
  * Fetch person details from Twenty CRM
  */
 async function fetchPersonFromCRM(personId: string): Promise<TwentyPerson | null> {
@@ -85,20 +187,41 @@ async function fetchPersonFromCRM(personId: string): Promise<TwentyPerson | null
     })
 
     if (!response.ok) {
-      console.warn(`Kontakt ${personId} nicht gefunden`)
+      console.warn(`Kontakt ${personId} nicht gefunden (Status: ${response.status})`)
       return null
     }
 
-    const data = await response.json()
-    // Twenty CRM returns { person: {...} } for single person lookup
-    // Extract the inner person object
-    if (data.person) {
-      return data.person
+    const responseText = await response.text()
+    console.log(`=== RAW PERSON RESPONSE ===`)
+    console.log(responseText.slice(0, 1000))
+    console.log(`===========================`)
+
+    let data: Record<string, unknown>
+    try {
+      data = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error(`Failed to parse person response:`, parseError)
+      return null
     }
-    if (data.data) {
-      return data.data
+
+    console.log(`Response top-level keys: ${Object.keys(data).join(', ')}`)
+
+    // Extract person from response wrapper
+    const rawPerson = extractPersonFromResponse(data)
+    if (!rawPerson) {
+      console.error(`Could not extract person from response structure`)
+      return null
     }
-    return data
+
+    // Normalize to our interface format
+    const person = normalizePersonData(rawPerson)
+    if (!person) {
+      console.error(`Could not normalize person data`)
+      return null
+    }
+
+    console.log(`✅ Person loaded: ${person.name.firstName} ${person.name.lastName} <${person.emails.primaryEmail}>`)
+    return person
   } catch (error) {
     console.error('Fehler beim Laden des Kontakts:', error)
     return null
@@ -441,9 +564,6 @@ export async function POST(request: Request) {
 
     console.log(`Kontakt-ID: ${personId} (source: ${payload.record.linkedPersonId ? 'linkedPersonId' : 'pointOfContactId'})`)
     const person = await fetchPersonFromCRM(personId)
-
-    // Debug: Log extracted person data
-    console.log(`Person extracted - Name: ${person?.name?.firstName} ${person?.name?.lastName}, Email: ${person?.emails?.primaryEmail}`)
 
     if (!person || !person.emails?.primaryEmail) {
       console.log(`⚠️ SKIPPED: Kontakt nicht gefunden oder keine E-Mail-Adresse`)
