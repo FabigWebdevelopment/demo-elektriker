@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { renderReviewRequest, getEmailSender } from '@/emails/render'
 import { randomUUID } from 'crypto'
+import { brandConfig } from '@/emails/config/brand.config'
 
 /**
  * Twenty CRM Webhook Handler
@@ -36,6 +37,7 @@ interface TwentyWebhookPayload {
     name: string
     stage: string
     pointOfContactId?: string
+    linkedPersonId?: string // Custom field to store person ID (webhooks don't include relations)
     updatedAt: string
     createdAt: string
   }
@@ -268,6 +270,11 @@ async function sendProposalFollowUp(
 
   const firstName = person.name.firstName || 'Kunde'
   const funnelName = extractFunnelName(opportunityName)
+  const sender = getEmailSender()
+
+  // Use centralized brand config for all company info
+  const { company, contact, colors } = brandConfig
+  const crmBaseUrl = process.env.TWENTY_CRM_BASE_URL || 'https://crm.fabig-suite.de'
 
   const subject = isSecondFollowUp
     ? `⏰ Dein ${funnelName} Angebot läuft bald ab`
@@ -280,18 +287,18 @@ async function sendProposalFollowUp(
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="color: #f97316; margin: 0;">⚡ Müller Elektrotechnik</h1>
+    <h1 style="color: ${colors.primary}; margin: 0;">⚡ ${company.name}</h1>
   </div>
   <h2 style="color: #333;">Hallo ${firstName}!</h2>
   <p>Ich melde mich ein letztes Mal zu deinem <strong>${funnelName}</strong> Angebot.</p>
   <p>Falls sich deine Pläne geändert haben, ist das kein Problem – lass es mich einfach kurz wissen.</p>
-  <div style="background: #fff7ed; border: 2px solid #f97316; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
-    <p style="margin: 0; font-size: 18px; font-weight: bold; color: #f97316;">⏰ Angebotspreis nur noch diese Woche gültig</p>
+  <div style="background: #fff7ed; border: 2px solid ${colors.primary}; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+    <p style="margin: 0; font-size: 18px; font-weight: bold; color: ${colors.primary};">⏰ Angebotspreis nur noch diese Woche gültig</p>
     <p style="margin: 10px 0 0 0; color: #666;">Danach müssen wir leider neu kalkulieren.</p>
   </div>
-  <p>📞 <a href="tel:+4989123456789" style="color: #f97316;">089 1234 5678</a><br>
-  💬 <a href="https://wa.me/4989123456789" style="color: #f97316;">WhatsApp schreiben</a></p>
-  <p>Viele Grüße,<br><strong>Thomas Müller</strong></p>
+  <p>📞 <a href="tel:${contact.phone}" style="color: ${colors.primary};">${contact.phoneDisplay}</a><br>
+  💬 <a href="https://wa.me/${contact.whatsapp}" style="color: ${colors.primary};">WhatsApp schreiben</a></p>
+  <p>Viele Grüße,<br><strong>${company.owner}</strong></p>
 </body>
 </html>`
     : `
@@ -300,7 +307,7 @@ async function sendProposalFollowUp(
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="color: #f97316; margin: 0;">⚡ Müller Elektrotechnik</h1>
+    <h1 style="color: ${colors.primary}; margin: 0;">⚡ ${company.name}</h1>
   </div>
   <h2 style="color: #333;">Hallo ${firstName}!</h2>
   <p>Ich wollte kurz nachfragen, ob du unser Angebot für <strong>${funnelName}</strong> erhalten hast?</p>
@@ -308,11 +315,11 @@ async function sendProposalFollowUp(
   <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
     <p style="margin: 0;"><strong>So erreichst du mich:</strong></p>
     <p style="margin: 10px 0 0 0;">
-      📞 <a href="tel:+4989123456789" style="color: #f97316;">089 1234 5678</a><br>
-      💬 <a href="https://wa.me/4989123456789" style="color: #f97316;">WhatsApp schreiben</a>
+      📞 <a href="tel:${contact.phone}" style="color: ${colors.primary};">${contact.phoneDisplay}</a><br>
+      💬 <a href="https://wa.me/${contact.whatsapp}" style="color: ${colors.primary};">WhatsApp schreiben</a>
     </p>
   </div>
-  <p>Viele Grüße,<br><strong>Thomas Müller</strong></p>
+  <p>Viele Grüße,<br><strong>${company.owner}</strong></p>
 </body>
 </html>`
 
@@ -323,8 +330,9 @@ async function sendProposalFollowUp(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Müller Elektrotechnik <elektriker@fabig.website>',
+      from: sender.from,
       to: person.emails.primaryEmail,
+      replyTo: sender.replyTo,
       subject,
       html,
     }),
@@ -347,7 +355,7 @@ async function sendProposalFollowUp(
   <h2>📋 Angebot noch offen</h2>
   <p><strong>${person.name.firstName} ${person.name.lastName}</strong> hat noch nicht auf das <strong>${funnelName}</strong> Angebot geantwortet.</p>
   <p>📧 ${person.emails.primaryEmail}<br>📞 ${person.phones?.primaryPhoneNumber || '-'}</p>
-  <a href="https://crm.fabig-suite.de" style="background: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Im CRM öffnen</a>
+  <a href="${crmBaseUrl}" style="background: ${colors.primary}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Im CRM öffnen</a>
 </body>
 </html>`,
     }),
@@ -407,19 +415,24 @@ export async function POST(request: Request) {
       })
     }
 
-    // Fetch contact data
-    if (!payload.record.pointOfContactId) {
+    // Fetch contact data - try linkedPersonId first (custom field), then pointOfContactId (relation)
+    // Note: Webhooks don't include relation data, so linkedPersonId is stored as a custom field
+    const personId = payload.record.linkedPersonId || payload.record.pointOfContactId
+
+    if (!personId) {
       console.log(`⚠️ SKIPPED: Opportunity "${payload.record.name}" hat keine verknüpfte Kontaktperson`)
-      console.log(`→ Bitte im CRM unter "Point of Contact" einen Kontakt auswählen`)
+      console.log(`→ Weder linkedPersonId noch pointOfContactId im Webhook vorhanden`)
+      console.log(`→ Für neue Leads wird linkedPersonId automatisch gesetzt`)
+      console.log(`→ Für bestehende Opportunities: Im CRM "Point of Contact" setzen`)
       return NextResponse.json({
         received: true,
         action: 'skipped',
-        reason: 'Keine Kontaktperson verknüpft - bitte im CRM "Point of Contact" setzen',
+        reason: 'Keine Kontaktperson verknüpft - linkedPersonId oder pointOfContactId fehlt',
       })
     }
 
-    console.log(`Kontakt-ID: ${payload.record.pointOfContactId}`)
-    const person = await fetchPersonFromCRM(payload.record.pointOfContactId)
+    console.log(`Kontakt-ID: ${personId} (source: ${payload.record.linkedPersonId ? 'linkedPersonId' : 'pointOfContactId'})`)
+    const person = await fetchPersonFromCRM(personId)
     if (!person || !person.emails?.primaryEmail) {
       console.log(`⚠️ SKIPPED: Kontakt nicht gefunden oder keine E-Mail-Adresse`)
       return NextResponse.json({

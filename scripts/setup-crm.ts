@@ -134,7 +134,8 @@ const OPPORTUNITY_STAGES = [
   { value: 'TERMIN_VEREINBART', label: 'Termin vereinbart', color: 'orange', position: 2 },
   { value: 'KUNDE_GEWONNEN', label: 'Kunde gewonnen', color: 'green', position: 3 },
   { value: 'ABGESCHLOSSEN', label: 'Abgeschlossen', color: 'lime', position: 4 },
-  { value: 'VERLOREN', label: 'Verloren', color: 'red', position: 5 },
+  { value: 'REVIEW_SENT', label: 'Bewertung angefragt', color: 'purple', position: 5 },
+  { value: 'VERLOREN', label: 'Verloren', color: 'red', position: 6 },
 ]
 
 // Task status options
@@ -146,6 +147,13 @@ const TASK_STATUS_OPTIONS = [
 
 // Custom fields for Opportunity
 const OPPORTUNITY_CUSTOM_FIELDS = [
+  {
+    name: 'linkedPersonId',
+    label: 'Kontakt-ID',
+    type: 'TEXT',
+    description: 'ID der verknüpften Kontaktperson (für Webhook-Zugriff)',
+    icon: 'IconUser',
+  },
   {
     name: 'leadScore',
     label: 'Lead-Bewertung',

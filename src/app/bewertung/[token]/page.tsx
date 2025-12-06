@@ -6,25 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Send, ExternalLink, CheckCircle2, MessageSquare, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-
-// Brand config for the review page
-// These values should match the email brand.config
-const reviewConfig = {
-  name: 'Müller Elektrotechnik',
-  contact: {
-    phone: '+4989123456789',
-    phoneDisplay: '089 1234 5678',
-    city: 'München',
-  },
-  social: {
-    // Google Review URL - replace with actual client URL
-    google: 'https://g.page/mueller-elektro-muenchen/review',
-  },
-  trust: {
-    googleRating: '4.9',
-    reviewCount: 127,
-  },
-}
+import { reviewConfig } from '@/config/review.config'
 
 /**
  * Review Gate Page

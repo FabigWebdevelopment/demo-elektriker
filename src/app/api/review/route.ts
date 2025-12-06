@@ -17,6 +17,7 @@ import { Resend } from 'resend'
 const TWENTY_API_URL = process.env.TWENTY_CRM_API_URL || ''
 const TWENTY_API_KEY = process.env.TWENTY_API_KEY || ''
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
+const CRM_BASE_URL = process.env.TWENTY_CRM_BASE_URL || 'https://crm.fabig-suite.de'
 
 const resend = new Resend(RESEND_API_KEY)
 
@@ -182,7 +183,7 @@ async function notifyOwnerOfNegativeFeedback(
     return
   }
 
-  const crmLink = `https://crm.fabig-suite.de/object/opportunity/${opportunityId}`
+  const crmLink = `${CRM_BASE_URL}/object/opportunity/${opportunityId}`
   const stars = '⭐'.repeat(rating)
 
   try {

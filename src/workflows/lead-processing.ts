@@ -661,6 +661,8 @@ async function createOpportunityInCRM(
 
     // Link to person contact (only if real CRM person)
     ...(hasRealPerson && { pointOfContactId: person.id }),
+    // Store person ID in custom field for webhook access (webhooks don't include relations)
+    ...(hasRealPerson && { linkedPersonId: person.id }),
 
     // Financial - estimatedValue is the custom field for projected value
     // amount is the standard field (we use estimatedValue for our estimates)
